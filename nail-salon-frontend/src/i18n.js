@@ -206,7 +206,7 @@ const messages = {
 };
 
 const i18n = createI18n({
-  legacy: false, // use Composition API
+  legacy: true,
   locale: 'zh',
   fallbackLocale: 'zh',
   messages,

@@ -117,13 +117,11 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast } from 'vant';
 import { getCustomerStatus } from '../api';
-import { useI18n } from 'vue-i18n';
+import i18n from '../i18n';
 
 const router = useRouter();
 
-// 全局 i18n scope，切换后所有页面 $t 都会响应
-const { locale: i18nLocale } = useI18n({ useScope: 'global' });
-const currentLang = ref(i18nLocale.value);
+const currentLang = ref(i18n.global.locale);
 
 const userName = ref('');
 const contactId = ref('');
@@ -177,7 +175,7 @@ const showPortfolio = () => router.push('/portfolio');
 const goToMyBookings = () => router.push('/my-bookings');
 const toggleLang = () => {
   currentLang.value = currentLang.value === 'zh' ? 'ja' : 'zh';
-  i18nLocale.value = currentLang.value;
+  i18n.global.locale = currentLang.value;
 };
 const resetUser = () => {
   identified.value = false;
