@@ -275,10 +275,9 @@ const goHome = () => {
 }
 
 .bottom-action {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
+  margin-top: 20px;
   padding: 16px 24px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
   background: var(--surface-frosted-strong);

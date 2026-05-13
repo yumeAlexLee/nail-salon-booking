@@ -362,8 +362,9 @@ const goToForm = () => {
 
 /* ─── Bottom bar ─── */
 .dt-bottom {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  position: sticky;
+  bottom: 0;
+  margin-top: 20px;
   padding: 12px 14px 24px;
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
