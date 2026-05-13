@@ -14,14 +14,13 @@
     <template v-else>
       <!-- ═══ 新客优惠卡片 ═══ -->
       <div v-if="isNewCustomer" class="discount-card">
-        <div class="discount-left">
-          <div class="discount-badge">新客</div>
-          <div class="discount-pct">-20%</div>
-        </div>
-        <div class="discount-right">
+        <!-- 星标装饰 -->
+        <span class="discount-star">✦</span>
+        <div class="discount-body">
           <div class="discount-title">新客 8 折优惠</div>
           <div class="discount-desc">首次预约自动减免，含咨询</div>
         </div>
+        <div class="discount-tag">-20%</div>
       </div>
 
       <!-- ═══ 分类 Tabs ═══ -->
@@ -174,47 +173,49 @@ onMounted(async () => {
 /* ─── Discount Card ─── */
 .discount-card {
   margin: 14px 14px 0;
-  padding: 16px 18px;
+  padding: 14px 16px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--pink-400) 0%, var(--pink-500) 60%, var(--pink-600) 100%);
+  background: linear-gradient(135deg, #ff6b9d 0%, #e8436e 100%);
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 14px;
-  box-shadow: var(--shadow-2);
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(232, 67, 110, 0.35);
+  position: relative;
+  overflow: hidden;
 }
-.discount-left {
-  text-align: center;
+.discount-star {
+  font-size: 20px;
+  color: #fcd34d;
   flex-shrink: 0;
+  text-shadow: 0 0 6px rgba(252, 211, 77, 0.5);
 }
-.discount-badge {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.9;
-}
-.discount-pct {
-  font-family: var(--font-body);
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1;
-  margin-top: 2px;
-}
-.discount-right {
+.discount-body {
   flex: 1;
 }
 .discount-title {
   font-family: var(--font-cjk);
   font-size: 16px;
   font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
 }
 .discount-desc {
   font-family: var(--font-cjk);
   font-size: 12px;
-  opacity: 0.88;
+  color: rgba(255, 255, 255, 0.78);
   margin-top: 2px;
+}
+.discount-tag {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 18px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #fef3c7;
+  color: #d97706;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 /* ─── Tabs ─── */
