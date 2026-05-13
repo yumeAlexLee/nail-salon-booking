@@ -25,10 +25,7 @@
         
         <div style="position:relative;margin-bottom:8px;">
           <i data-lucide="at-sign" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--pink-600);stroke-width:1.8;z-index:1;"></i>
-          <input v-model="contactId" placeholder="小红书 / WeChat / LINE 任一 ID" class="awai-field" style="padding-left:38px;font-family:ui-monospace,Menlo,monospace;" />
-        </div>
-        <div style="font-family:var(--font-body);font-size:11.5px;color:var(--ink-500);margin-bottom:14px;">
-          回头客填这里我们会自动认出来
+          <input v-model="contactId" placeholder="小红书 / WeChat / LINE 任一 ID" class="awai-field" style="padding-left:38px;" />
         </div>
 
         <van-button type="primary" block round size="large" :loading="checking" @click="identifyUser" class="apple-btn-active" style="height:50px;font-weight:700;font-size:15.5px;">
