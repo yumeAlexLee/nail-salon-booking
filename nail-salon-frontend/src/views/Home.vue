@@ -39,7 +39,7 @@
       <!-- 语言切换 & 切换账号 (在已识别区域底部) -->
       <div style="display:flex;justify-content:center;margin-top:14px;">
         <button @click="toggleLang" style="background:transparent;border:0;cursor:pointer;font-family:var(--font-body);font-size:11px;color:var(--pink-600);letter-spacing:0.06em;">
-          {{ locale === 'zh' ? '日本語' : '中文' }}
+          {{ currentLang === 'zh' ? '日本語' : '中文' }}
         </button>
       </div>
     </div>
@@ -105,7 +105,7 @@
       <!-- 语言切换 -->
       <div style="display:flex;justify-content:center;margin-top:16px;">
         <button @click="toggleLang" style="background:transparent;border:0;cursor:pointer;font-family:var(--font-body);font-size:11px;color:var(--pink-600);letter-spacing:0.06em;">
-          {{ locale === 'zh' ? '日本語' : '中文' }}
+          {{ currentLang === 'zh' ? '日本語' : '中文' }}
         </button>
       </div>
     </div>
@@ -120,7 +120,10 @@ import { showToast } from 'vant';
 import { getCustomerStatus } from '../api';
 
 const router = useRouter();
-const { locale } = useI18n();
+const { locale: i18nLocale } = useI18n();
+
+// 本地语言状态，确保模板响应式
+const currentLang = ref(i18nLocale.value);
 
 const userName = ref('');
 const contactId = ref('');
@@ -172,7 +175,10 @@ const startBooking = () => router.push('/menu');
 const showGuidePreview = () => router.push('/guide');
 const showPortfolio = () => router.push('/portfolio');
 const goToMyBookings = () => router.push('/my-bookings');
-const toggleLang = () => { locale.value = locale.value === 'zh' ? 'ja' : 'zh'; };
+const toggleLang = () => {
+  currentLang.value = currentLang.value === 'zh' ? 'ja' : 'zh';
+  i18nLocale.value = currentLang.value;
+};
 const resetUser = () => {
   identified.value = false;
   userName.value = '';
