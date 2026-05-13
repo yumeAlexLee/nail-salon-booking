@@ -53,23 +53,56 @@ CREATE TABLE IF NOT EXISTS menu_item (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单项目表';
 
--- 插入示例数据（仅保留美甲，已删除美睫）
-INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, duration, description, description_ja, sort_order) VALUES
-('美甲', 'ネイル', '单色美甲', '単色ネイル', 3000, 60, '纯色简约美甲，多种颜色可选', 'シンプルな単色ネイル、豊富なカラーからお選びいただけます', 1),
-('美甲', 'ネイル', '猫眼美甲', 'キャッツアイ', 4500, 90, '猫眼效果，优雅闪耀', '高級感のあるキャッツアイデザイン', 2),
-('美甲', 'ネイル', '法式美甲', 'フレンチネイル', 4000, 75, '经典法式，优雅大方', 'クラシックなフレンチデザイン', 3),
-('美甲', 'ネイル', '渐变美甲', 'グラデーション', 5000, 90, '渐变色彩，精致过渡', '美しいグラデーションカラー', 4);
+-- AWAI NAIL 菜单数据（4分类12项）
+-- 卸甲
+INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, duration, sort_order) VALUES
+('卸甲', 'ジェルオフ', '换款卸甲·本甲', '付け替えオフ・自爪', 0, 15, 10),
+('卸甲', 'ジェルオフ', '他店来·本甲', '他店ジェルオフ・自爪', 600, 20, 11),
+('卸甲', 'ジェルオフ', '他店来·甲片', '他店ジェルオフ・チップ', 1000, 30, 12);
+-- 本甲
+INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, duration, sort_order) VALUES
+('本甲', '自爪ジェル', '单色', 'シンプルカラー', 2600, 60, 20),
+('本甲', '自爪ジェル', '裸色', 'ヌードカラー', 3000, 70, 21),
+('本甲', '自爪ジェル', '简约·猫眼', 'キャッツアイ', 3600, 80, 22),
+('本甲', '自爪ジェル', '轻奢·法式', 'フレンチ', 5600, 100, 23);
+-- 延长
+INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, duration, sort_order) VALUES
+('延长', 'ネイルチップ', '高位半贴', 'ハーフチップ（高め）', 1000, 30, 30),
+('延长', 'ネイルチップ', '塑形半贴', 'シェイプハーフチップ', 2000, 45, 31),
+('延长', 'ネイルチップ', '加长浅贴', 'ロングスタイル', 3000, 60, 32);
+-- 款式甲
+INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, duration, sort_order) VALUES
+('款式甲', 'アートネイル', '叠加层次款式', 'レイヤーアート', 800, 30, 40),
+('款式甲', 'アートネイル', '人物手绘', 'ハンドペイント', 2500, 90, 41),
+('款式甲', 'アートネイル', '手工造型', '3Dネイル', 2800, 90, 42);
 
 -- 唯一约束（已手动添加，防止 schema 重复插入）
 -- 若需重新添加：ALTER TABLE menu_item ADD UNIQUE INDEX uk_menu_name_category (name, category);
 
--- ─── 定金功能 ──────────────────────────────────────
+-- ─── 定金功能（已有数据库升级列）──────────────────
 -- deposit_amount / deposit_status / deposit_paid_at 已在 reservation 表定义中包含。
--- 如果是已有数据库，请手动执行：
--- ALTER TABLE reservation
---     ADD COLUMN IF NOT EXISTS deposit_amount INT DEFAULT 500 COMMENT '定金金额（日元）',
---     ADD COLUMN IF NOT EXISTS deposit_status VARCHAR(20) DEFAULT 'NONE' COMMENT 'NONE/CUSTOMER_PAID/PAID/REFUNDED/FORFEITED',
---     ADD COLUMN IF NOT EXISTS deposit_paid_at TIMESTAMP NULL COMMENT '定金支付时间';
+ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_amount INT DEFAULT 500 COMMENT '定金金额（日元）';
+ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_status VARCHAR(20) DEFAULT 'NONE' COMMENT 'NONE/CUSTOMER_PAID/PAID/REFUNDED/FORFEITED';
+ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_paid_at TIMESTAMP NULL COMMENT '定金支付时间';
+
+-- ─── AWAI 新增字段 ────────────────────────────────
+ALTER TABLE reservation ADD COLUMN IF NOT EXISTS total_amount INT DEFAULT 0 COMMENT '服务总价(日元)';
+ALTER TABLE reservation ADD COLUMN IF NOT EXISTS cancel_reason VARCHAR(255) COMMENT '取消原因';
 
 -- 默认定金金额设置
 INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('deposit_amount', '500');
+-- AWAI 新增设置
+INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('deposit_percentage', '30');
+INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('time_slot_duration', '90');
+INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('closed_days', 'MONDAY');
+
+-- ─── 作品集图片表 ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS portfolio_image (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    image_url VARCHAR(500) NOT NULL COMMENT '图片路径',
+    tag VARCHAR(100) COMMENT '标签，如 猫眼/法式/渐变',
+    category VARCHAR(50) COMMENT '分类，对应菜单分类',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    is_active INT DEFAULT 1 COMMENT '1显示, 0隐藏',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='作品集图片表';
