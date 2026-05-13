@@ -11,12 +11,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,6 +32,15 @@ public class ReservationService {
     private final LockedSlotMapper lockedSlotMapper;
     private final StoreSettingsService storeSettingsService;
     private final NotifyService notifyService;
+
+    private static final List<String> AWAI_SLOTS = Arrays.asList(
+            "11:00", "12:30", "14:00", "15:30", "17:00", "18:30"
+    );
+
+    /** AWAI 标准时间点（6个槽，90分钟间隔） */
+    public List<String> getAwaiSlots() {
+        return AWAI_SLOTS;
+    }
 
     public List<String> getAllSlots() {
         Map<String, String> settings = storeSettingsService.getAllSettings();
@@ -139,10 +152,16 @@ public class ReservationService {
         res.setStatus("PENDING_DEPOSIT");
         res.setCreatedAt(LocalDateTime.now());
 
-        // ─── 自动设定定金 ─────────────────────────────────
-        // 每笔新预约都需要预付 ¥500 定金（默认待支付状态）
-        // 后续可在管理中标记收款/退款/没收
-        res.setDepositAmount(getDefaultDeposit());
+        // ─── 服务总价 & 动态定金计算 ──────────────────────
+        Integer totalAmount = req.getTotalAmount();
+        if (totalAmount != null && totalAmount > 0) {
+            res.setTotalAmount(totalAmount);
+            int percentage = getDepositPercentage();
+            int deposit = (int) Math.ceil(totalAmount * percentage / 100.0);
+            res.setDepositAmount(deposit);
+        } else {
+            res.setDepositAmount(getDefaultDeposit());
+        }
         res.setDepositStatus("NONE");
         // ─────────────────────────────────────────────────
 
@@ -218,7 +237,7 @@ public class ReservationService {
      * - 通知店主（含退款提醒）
      */
     @Transactional
-    public void userCancelReservation(Long id) {
+    public void userCancelReservation(Long id, String reason) {
         Reservation r = reservationMapper.selectById(id);
         if (r == null) {
             throw new RuntimeException("预约不存在");
@@ -227,19 +246,32 @@ public class ReservationService {
             throw new RuntimeException("该预约状态不允许取消");
         }
 
-        // 如果定金已付（含客户自报），标记为已没收（取消不退定金）
         if ("PAID".equals(r.getDepositStatus()) || "CUSTOMER_PAID".equals(r.getDepositStatus())) {
             r.setDepositStatus("FORFEITED");
         }
 
-        // 将预约状态设为已取消
         r.setStatus("CANCELLED");
+        if (reason != null && !reason.isBlank()) {
+            r.setCancelReason(reason);
+        }
 
-        // 更新时间段释放 — 不删除记录，只是改变状态
         reservationMapper.updateById(r);
-
-        // 发送取消通知给店主（含定金处理信息）
         notifyService.notifyUserCancelledReservation(r);
+    }
+
+    @Transactional
+    public void adminCancelReservation(Long id, String reason) {
+        Reservation r = reservationMapper.selectById(id);
+        if (r == null) throw new RuntimeException("预约不存在");
+        if ("CANCELLED".equals(r.getStatus()) || "COMPLETED".equals(r.getStatus())) {
+            throw new RuntimeException("该预约状态不允许取消");
+        }
+        r.setStatus("CANCELLED");
+        if (reason != null && !reason.isBlank()) {
+            r.setCancelReason(reason);
+        }
+        reservationMapper.updateById(r);
+        notifyService.notifyCancelledReservation(r);
     }
 
     public List<Reservation> getAllReservations() {
@@ -373,19 +405,64 @@ public class ReservationService {
 
     // ================= 定金管理 =================
 
-    /**
-     * 获取默认定金金额
-     */
     public int getDefaultDeposit() {
         String val = storeSettingsService.getAllSettings().getOrDefault("deposit_amount", "1000");
         return Integer.parseInt(val);
     }
 
-    /**
-     * 更新默认定金金额
-     */
+    public int getDepositPercentage() {
+        String val = storeSettingsService.getAllSettings().getOrDefault("deposit_percentage", "30");
+        return Integer.parseInt(val);
+    }
+
     public void updateDefaultDeposit(int amount) {
         storeSettingsService.updateSetting("deposit_amount", String.valueOf(amount));
+    }
+
+    public Map<String, Object> getWeekSummary() {
+        LocalDate today = LocalDate.now();
+        List<String> allSlots = getAllSlots();
+        int totalSlots = allSlots.size();
+
+        List<Map<String, Object>> days = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = today.plusDays(i);
+
+            List<String> booked = reservationMapper.selectList(
+                    new LambdaQueryWrapper<Reservation>()
+                            .eq(Reservation::getReserveDate, date)
+                            .ne(Reservation::getStatus, "CANCELLED")
+                            .ne(Reservation::getStatus, "COMPLETED")
+            ).stream().map(Reservation::getTimeSlot).collect(Collectors.toList());
+
+            List<String> locked = lockedSlotMapper.selectList(
+                    new LambdaQueryWrapper<LockedSlot>().eq(LockedSlot::getLockDate, date)
+            ).stream().map(LockedSlot::getTimeSlot).collect(Collectors.toList());
+
+            long bookedCount = booked.size();
+            long lockedCount = locked.stream().filter(s -> !booked.contains(s)).count();
+            long availableCount = allSlots.stream()
+                    .filter(s -> !booked.contains(s) && !locked.contains(s)).count();
+
+            Map<String, Object> day = new LinkedHashMap<>();
+            day.put("date", date.toString());
+            day.put("weekday", date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.CHINESE));
+            day.put("totalSlots", totalSlots);
+            day.put("bookedCount", bookedCount);
+            day.put("lockedCount", lockedCount);
+            day.put("availableCount", availableCount);
+            days.add(day);
+        }
+
+        long pendingCount = reservationMapper.selectCount(
+                new LambdaQueryWrapper<Reservation>()
+                        .eq(Reservation::getStatus, "PENDING_DEPOSIT")
+        );
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("days", days);
+        result.put("pendingReservations", pendingCount);
+        return result;
     }
 
     /**
