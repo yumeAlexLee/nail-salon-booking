@@ -373,8 +373,8 @@ const goToForm = () => {
 @media (min-width: 768px) {
   .dt-bottom {
     width: 390px;
-    left: calc(100vw - 390px);
-    right: auto;
+    right: 0;
+    left: auto;
   }
 }
 .dt-next {

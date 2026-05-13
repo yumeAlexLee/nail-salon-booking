@@ -346,8 +346,8 @@ const onSubmit = async () => {
 @media (min-width: 768px) {
   .bf-bottom {
     width: 390px;
-    left: calc(100vw - 390px);
-    right: auto;
+    right: 0;
+    left: auto;
   }
 }
 </style>
