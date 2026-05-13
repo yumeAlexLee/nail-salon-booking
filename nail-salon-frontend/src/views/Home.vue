@@ -2,7 +2,7 @@
   <div class="home">
     <!-- ═══ Header: AWAI Wordmark ═══ -->
     <div style="text-align:center; padding: 32px 20px 10px;">
-      <div class="awai-eyebrow">淡い · awai · nail studio</div>
+      <div class="awai-eyebrow">彩り · awai · nail studio</div>
       <div style="margin-top: 8px;">
         <span class="awai-wordmark">AWAI NAIL</span>
       </div>

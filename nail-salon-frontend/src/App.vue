@@ -4,7 +4,7 @@
     <div class="desktop-visual">
       <div class="visual-overlay"></div>
       <div class="visual-content">
-        <div class="awai-eyebrow">淡い · awai · nail studio</div>
+        <div class="awai-eyebrow">彩り · awai · nail studio</div>
         <div class="awai-wordmark" style="margin-top:12px;font-size:72px;">AWAI NAIL</div>
         <p style="margin-top:20px;font-family:var(--font-cjk);color:rgba(255,255,255,0.85);font-size:18px;">
           发现指尖的艺术 · 专属妳的美甲时光
