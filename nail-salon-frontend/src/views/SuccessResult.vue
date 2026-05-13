@@ -1,306 +1,384 @@
 <template>
   <div class="success-result">
-    <!-- 成功动画 -->
-    <div class="result-icon">
-      <van-icon name="checked" color="var(--accent-green)" size="80" />
+    <!-- ═══ 头部情感区 ═══ -->
+    <div class="sr-header">
+      <div class="sr-emoji">🌷</div>
+      <div class="sr-seeyou">See you soon</div>
+      <div class="sr-status">预约已提交，等待店主确认</div>
+      <div class="sr-order">编号 {{ orderId }}</div>
     </div>
-    <h2 class="title">{{ $t('success.title') }}</h2>
-    <p class="desc">{{ $t('success.desc') }}</p>
 
-    <!-- ─── 定金支付模块 ─────────────────────────────── -->
-    <div class="payment-card" v-if="depositAmount > 0">
-      <!-- 未支付状态 -->
-      <template v-if="depositStatus !== 'CUSTOMER_PAID'">
-        <div class="payment-header">
-          <span class="payment-label">💰 预付定金</span>
-          <span class="payment-amount">¥{{ depositAmount.toLocaleString() }}</span>
-        </div>
-        <p class="payment-desc">请使用微信或支付宝扫码支付¥{{ depositAmount.toLocaleString() }}。预约取消定金恕不退还。</p>
-
-        <div class="payment-methods">
-          <div class="method-item" @click="handlePay('wechat')">
-            <span class="method-icon">💚</span>
-            <span class="method-name">微信支付</span>
-          </div>
-          <div class="method-item" @click="handlePay('alipay')">
-            <span class="method-icon">🔵</span>
-            <span class="method-name">支付宝</span>
-          </div>
-        </div>
-
-        <van-button block round type="primary" @click="handleClaimPaid" :loading="claiming" style="margin-top:12px">
-          我已付款
-        </van-button>
-      </template>
-
-      <!-- 已付款待确认状态 -->
-      <template v-else-if="depositStatus === 'CUSTOMER_PAID'">
-        <div class="customer-paid-section">
-          <div class="paid-animation">⏳</div>
-          <div class="paid-title">已提交确认</div>
-          <div class="paid-desc">店主确认到账后预约将正式生效</div>
-        </div>
-      </template>
-    </div>
-    <!-- ─────────────────────────────────────────────── -->
-
-    <!-- 店铺地址和指引模块 -->
-    <div class="store-info-card">
-      <div class="info-header">
-        <van-icon name="location" size="20" color="var(--ink-900)" />
-        <span class="info-text">{{ $t('home.location') }}</span>
+    <!-- ═══ 订单快照 ═══ -->
+    <div class="snapshot-card" v-if="selectedService">
+      <div class="snap-left">
+        <div class="snap-name">{{ selectedService.name }}</div>
+        <div class="snap-time">{{ reserveDate }} {{ timeSlot }}</div>
       </div>
-      <div class="guide-action">
-        <van-button plain round block size="normal" color="var(--ink-500)" @click="showGuidePreview" class="apple-btn-active">
-          {{ $t('home.showGuide') }}
-        </van-button>
+      <span class="snap-badge">待确认</span>
+    </div>
+
+    <!-- ═══ 定金支付模块 ═══ -->
+    <div class="pay-section" v-if="!paid">
+      <div class="pay-amount-row">
+        <span class="pay-label">支付定金</span>
+        <span class="pay-amount">¥{{ depositAmount.toLocaleString() }}</span>
       </div>
+
+      <!-- 支付方式 Tabs -->
+      <div class="pay-tabs">
+        <button
+          :class="['pay-tab', { active: payMethod === 'wechat' }]"
+          @click="payMethod = 'wechat'"
+        >💚 微信支付</button>
+        <button
+          :class="['pay-tab', { active: payMethod === 'alipay' }]"
+          @click="payMethod = 'alipay'"
+        >🔵 支付宝</button>
+      </div>
+
+      <!-- 二维码 -->
+      <div class="qr-area" @click="showQR">
+        <img :src="qrSrc" class="qr-img" alt="支付二维码" />
+      </div>
+      <div class="qr-hint">扫码完成后点击下方按钮</div>
+
+      <!-- 我已付款 -->
+      <button class="pay-btn" @click="handleClaimPaid" :disabled="claiming">
+        <van-loading v-if="claiming" size="16" color="#fff" style="margin-right:6px;" />
+        我已付款 · ¥{{ depositAmount.toLocaleString() }}
+      </button>
     </div>
 
-    <div class="bottom-action glass-effect">
-      <van-button type="primary" block round size="large" @click="goHome" class="apple-btn-active">
-        {{ $t('success.homeBtn') }}
-      </van-button>
+    <!-- ═══ 已付款状态 ═══ -->
+    <div v-else class="paid-state">
+      <div class="paid-icon">⏳</div>
+      <div class="paid-title">已提交确认</div>
+      <div class="paid-desc">店主确认到账后预约将正式生效</div>
     </div>
 
+    <!-- ═══ 底部导航 ═══ -->
+    <div class="sr-nav">
+      <button class="sr-nav-btn" @click="showGuidePreview">
+        <van-icon name="location-o" size="22" />
+        <span>店铺指引</span>
+      </button>
+      <button class="sr-nav-btn" @click="goHome">
+        <van-icon name="home-o" size="22" />
+        <span>回主页</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { showImagePreview, showToast } from 'vant';
-import { claimPaid, getDefaultDeposit } from '../api';
+import { claimPaid } from '../api';
 
 import wechatQr from '../assets/wechat-qr.png';
 import alipayQr from '../assets/alipay-qr.png';
 
 const router = useRouter();
 
-// ─── 定金支付状态 ───────────────────────────────────
-const depositAmount = ref(500);
-const claiming = ref(false);
-const depositStatus = ref('NONE');
+// 订单数据
+const selectedService = JSON.parse(sessionStorage.getItem('selectedService') || 'null');
+const reserveDate = sessionStorage.getItem('reserveDate') || '';
+const timeSlot = sessionStorage.getItem('timeSlot') || '';
+const isNew = sessionStorage.getItem('customerType') === 'NEW';
 
-onMounted(async () => {
-  try {
-    const res = await getDefaultDeposit();
-    if (res.code === 200 && res.data) {
-      depositAmount.value = res.data;
-    }
-  } catch (e) {
-    // 默认 500，不影响页面
-  }
+// 订单号
+const orderId = 'B-' + String(Date.now()).slice(-8);
+
+// 定金
+const depositAmount = computed(() => {
+  const stored = sessionStorage.getItem('depositAmount');
+  if (stored) return parseInt(stored);
+  if (!selectedService) return 500;
+  const price = isNew ? Math.round(selectedService.price * 0.8) : selectedService.price;
+  return Math.ceil(price * 0.3);
 });
 
-const QR_MAP = {
-  wechat: wechatQr,
-  alipay: alipayQr,
-};
+// 支付
+const payMethod = ref('wechat');
+const claiming = ref(false);
+const paid = ref(false);
 
-const handlePay = (method) => {
-  showImagePreview({ images: [QR_MAP[method]], closeable: true });
+const qrSrc = computed(() => payMethod.value === 'wechat' ? wechatQr : alipayQr);
+
+const showQR = () => {
+  showImagePreview({ images: [qrSrc.value], closeable: true });
 };
 
 const handleClaimPaid = async () => {
   claiming.value = true;
   try {
-    const reservationId = sessionStorage.getItem('lastReservationId');
-    if (reservationId) {
-      await claimPaid(reservationId);
-    }
-    depositStatus.value = 'CUSTOMER_PAID';
-  } catch (e) {
+    const id = sessionStorage.getItem('lastReservationId');
+    if (id) await claimPaid(id);
+    paid.value = true;
+    showToast('已提交确认');
+  } catch {
     showToast('提交失败，请重试');
   } finally {
     claiming.value = false;
   }
 };
 
-// ─── 原有功能 ───────────────────────────────────────
-const showGuidePreview = () => {
-  router.push('/guide');
-};
+onMounted(() => {
+  // 检查是否已付款
+  // (后端已有 claimPaid API)
+});
 
+const showGuidePreview = () => router.push('/guide');
 const goHome = () => {
   sessionStorage.removeItem('reserveDate');
   sessionStorage.removeItem('timeSlot');
   sessionStorage.removeItem('lastReservationId');
+  sessionStorage.removeItem('depositAmount');
   router.replace('/');
 };
 </script>
 
 <style scoped>
 .success-result {
-  text-align: center;
-  padding: 48px 24px 120px 24px;
+  padding: 32px 18px 100px;
   background: transparent;
   min-height: 100vh;
   box-sizing: border-box;
-  font-family: var(--font-cjk);
-}
-.result-icon {
-  margin-bottom: 24px;
-  animation: scale-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.title {
-  font-size: 28px;
-  color: var(--ink-900);
-  font-weight: 700;
-  margin-bottom: 12px;
-  letter-spacing: -0.5px;
-}
-.desc {
-  font-size: 16px;
-  color: var(--ink-500);
-  line-height: 1.6;
-  margin-bottom: 32px;
-}
-
-/* ─── 定金支付卡片 (AWAI frosted card) ───────────── */
-.payment-card {
-  background: var(--surface-frosted-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
-  padding: 24px;
-  margin-bottom: 24px;
-  text-align: left;
-  animation: fade-up 0.4s ease-out;
-}
-.payment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 8px;
-}
-.payment-label {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--pink-600);
-}
-.payment-amount {
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--pink-500);
-}
-.payment-desc {
-  font-size: 13px;
-  color: var(--ink-400);
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-/* ─── 支付方式按钮 (AWAI-style chips) ────────────── */
-.payment-methods {
-  display: flex;
-  gap: 12px;
-}
-.method-item {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--dur-base) var(--ease-soft);
-}
-.method-item:active {
-  transform: scale(0.96);
-  background: var(--pink-50);
-  border-color: var(--pink-300);
-}
-.method-item.paying {
-  opacity: 0.6;
-  pointer-events: none;
-}
-.method-icon {
-  font-size: 28px;
-}
-.method-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-700);
 }
 
-/* ─── 已付款待确认状态 ─────────────────────────── */
-.customer-paid-section {
+/* ─── Header ─── */
+.sr-header {
   text-align: center;
-  padding: 8px 0;
+  margin-bottom: 16px;
 }
-.paid-animation {
-  font-size: 48px;
-  margin-bottom: 8px;
+.sr-emoji { font-size: 40px; margin-bottom: 6px; }
+.sr-seeyou {
+  font-family: Caveat Brush, cursive;
+  font-size: 28px;
+  color: var(--pink-500);
+  letter-spacing: 0.04em;
+  transform: rotate(-1deg);
 }
-.paid-title {
-  font-size: 18px;
+.sr-status {
+  font-family: var(--font-cjk);
+  font-size: 14px;
+  color: var(--ink-700);
+  margin-top: 4px;
+}
+.sr-order {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ink-400);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Snapshot ─── */
+.snapshot-card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  margin-bottom: 20px;
+}
+.snap-left { flex: 1; }
+.snap-name {
+  font-family: var(--font-cjk);
   font-weight: 700;
+  font-size: 14px;
   color: var(--ink-900);
 }
-.paid-desc {
-  font-size: 14px;
+.snap-time {
+  font-family: var(--font-cjk);
+  font-size: 12px;
   color: var(--ink-500);
-  margin-top: 6px;
-  line-height: 1.5;
+  margin-top: 2px;
 }
-/* ─────────────────────────────────────────────── */
+.snap-badge {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fef6e0;
+  color: #b8860b;
+  flex-shrink: 0;
+}
 
-.store-info-card {
+/* ─── Payment section ─── */
+.pay-section {
+  width: 100%;
+  max-width: 380px;
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-2);
-  padding: 24px;
-  margin-bottom: 40px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
-.info-header {
+.pay-amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.pay-label {
+  font-family: var(--font-cjk);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-700);
+}
+.pay-amount {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--pink-500);
+}
+
+/* Tabs */
+.pay-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pay-tab {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 999px;
+  border: 1px solid var(--pink-200);
+  background: var(--pink-50);
+  font-family: var(--font-cjk);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: all 220ms cubic-bezier(0.22,0.61,0.36,1);
+}
+.pay-tab.active {
+  background: var(--pink-500);
+  color: #fff;
+  border-color: var(--pink-500);
+  box-shadow: var(--shadow-2);
+}
+
+/* QR */
+.qr-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.qr-img {
+  width: 180px;
+  height: 180px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: #fff;
+  padding: 8px;
+  box-shadow: var(--shadow-1);
+}
+.qr-hint {
+  text-align: center;
+  font-family: var(--font-cjk);
+  font-size: 12px;
+  color: var(--ink-400);
+  margin-bottom: 14px;
+}
+
+/* Pay button */
+.pay-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #ff6b9d 0%, #e8436e 100%);
+  color: #fff;
+  font-family: var(--font-cjk);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(232,67,110,0.35);
+  transition: all var(--dur-base) var(--ease-soft);
 }
-.info-text {
-  font-size: 16px;
-  color: var(--ink-900);
-  font-weight: 600;
-  margin-left: 8px;
-}
+.pay-btn:active { transform: scale(0.97); }
+.pay-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.bottom-action {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px 24px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+/* ─── Paid state ─── */
+.paid-state {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  padding: 30px 20px;
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  margin-bottom: 20px;
 }
-@media (min-width: 768px) {
-  .bottom-action {
-    width: 390px;
-    left: calc(100vw - 390px);
-    right: auto;
-  }
+.paid-icon { font-size: 48px; margin-bottom: 8px; }
+.paid-title {
+  font-family: var(--font-cjk);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink-900);
+}
+.paid-desc {
+  font-family: var(--font-cjk);
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: 4px;
 }
 
-/* ─── 动画 ────────────────────────────────────────── */
-@keyframes scale-up {
-  0% { transform: scale(0); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+/* ─── Bottom nav ─── */
+.sr-nav {
+  display: flex;
+  gap: 16px;
+  margin-top: auto;
 }
-@keyframes fade-up {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
+.sr-nav-btn {
+  width: 100px;
+  height: 100px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--ink-700);
+  font-family: var(--font-cjk);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all var(--dur-base) var(--ease-soft);
+}
+.sr-nav-btn:active {
+  transform: scale(0.95);
+  background: var(--pink-50);
 }
 </style>
