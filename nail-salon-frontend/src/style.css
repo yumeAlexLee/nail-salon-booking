@@ -159,21 +159,7 @@ html, body, #app {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─────────── Background plates ─────────── */
-.bg-plate {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-size: cover;
-  background-position: center;
-}
-.bg-plate::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(253, 243, 245, 0.30);
-  pointer-events: none;
-}
+/* ─── No separate bg-plate — App.vue sets background on .mobile-container directly ─── */
 
 /* ─────────── Frosted glass card ─────────── */
 .frost-card {

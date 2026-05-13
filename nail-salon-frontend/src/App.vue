@@ -14,8 +14,6 @@
     
     <!-- 右侧应用区 -->
     <div class="mobile-container" id="mobile-container">
-      <!-- 背景图板 — 默认 bg-home，每个页面 route 切换时 component 自己管控 -->
-      <div class="bg-plate" id="awai-bg-plate"></div>
       <router-view></router-view>
     </div>
   </div>
@@ -27,7 +25,6 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 
-// 根据路由切换背景图
 const bgMap = {
   '/': 'bg-home.jpg',
   '/menu': 'bg-menu.jpg',
@@ -41,10 +38,10 @@ const bgMap = {
 };
 
 function updateBg(path) {
-  const plate = document.getElementById('awai-bg-plate');
-  if (!plate) return;
+  const el = document.getElementById('mobile-container');
+  if (!el) return;
   const bg = bgMap[path] || 'bg-home.jpg';
-  plate.style.backgroundImage = `url(/${bg})`;
+  el.style.backgroundImage = `url(/${bg})`;
 }
 
 onMounted(() => updateBg(route.path));
@@ -58,7 +55,6 @@ watch(() => route.path, updateBg);
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: var(--surface-bg);
 }
 
 /* ─── 桌面端左侧视觉区 ─── */
@@ -73,6 +69,24 @@ watch(() => route.path, updateBg);
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--pink-50);
+  transition: background-image 0.4s var(--ease-soft);
+}
+/* 粉色半透明遮罩，让文字在背景图上清晰可见 */
+.mobile-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(253, 243, 245, 0.25);
+  pointer-events: none;
+  z-index: 0;
+}
+/* 页面内容在遮罩之上 */
+.mobile-container > :deep(*) {
+  position: relative;
+  z-index: 1;
 }
 
 /* ─── 桌面端 (>= 768px) ─── */
@@ -101,7 +115,6 @@ watch(() => route.path, updateBg);
     width: 390px;
     min-width: 390px;
     height: 100vh;
-    background: transparent;
     box-shadow: -8px 0 30px rgba(232, 127, 160, 0.14);
     position: relative;
     z-index: 10;
