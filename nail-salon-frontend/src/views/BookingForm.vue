@@ -1,133 +1,151 @@
 <template>
   <div class="booking-form">
-    <van-nav-bar
-      :title="$t('nav.fillInfo')"
-      left-arrow
-      @click-left="goBack"
-      class="glass-effect" fixed placeholder :border="false"
-    />
-    
-    <!-- ═══ 预约摘要 — AWAI frosted card ═══ -->
-    <div class="summary-card">
-      <div class="summary-title">{{ $t('form.summaryTitle') }}</div>
-      <div class="summary-item">{{ $t('form.date') }}：{{ reserveDate }}</div>
-      <div class="summary-item">{{ $t('form.time') }}：{{ timeSlot }}</div>
-      <div class="summary-item">{{ $t('form.identity') }}：{{ customerType === 'NEW' ? $t('home.newCustomer') : $t('home.oldCustomer') }}</div>
+    <!-- ═══ Nav ═══ -->
+    <div class="bf-nav">
+      <button class="bf-back" @click="goBack">
+        <van-icon name="arrow-left" size="18" color="var(--ink-700)" />
+      </button>
+      <div class="bf-title">填写信息</div>
+      <div style="width:36px;"></div>
     </div>
 
-    <!-- ═══ 定金预付提醒 — AWAI frosted card ═══ -->
-    <div class="deposit-notice">
-      <div class="deposit-icon">💰</div>
-      <div class="deposit-body">
-        <div class="deposit-title">预约需预付定金</div>
-        <div class="deposit-amount">¥500</div>
-        <div class="deposit-desc">预约成功后请完成定金支付，到店后自动抵扣服务费用。</div>
+    <!-- ═══ 预约摘要 ═══ -->
+    <div class="summary-card">
+      <div class="summary-row" v-if="selectedService">
+        <span class="summary-label">{{ selectedService.name }}</span>
+        <span class="summary-price">¥{{ isNew ? Math.round(selectedService.price * 0.8).toLocaleString() : selectedService.price.toLocaleString() }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">{{ reserveDate }} {{ timeSlot }}</span>
+        <span class="summary-meta" v-if="selectedService">约 {{ selectedService.duration }} 分</span>
       </div>
     </div>
 
-    <van-form id="booking-form" @submit="onSubmit" class="booking-form-inner">
-      <van-cell-group inset>
-        <van-field
-          v-model="form.name"
-          name="name"
-          :label="$t('form.nameLabel')"
-          :placeholder="$t('form.namePlaceholder')"
-          :rules="[{ required: true, message: $t('form.namePlaceholder') }]"
-        />
-        <van-field
-          v-model="form.contactId"
-          name="contactId"
-          :label="$t('form.contactLabel')"
-          :placeholder="$t('form.contactPlaceholder')"
-          :rules="[{ required: true, message: $t('form.contactPlaceholder') }]"
-        />
-        <van-field name="removalType" :label="$t('form.removalLabel')">
-          <template #input>
-            <van-radio-group v-model="form.removalType" direction="horizontal">
-              <van-radio name="本甲">{{ $t('form.removalType.natural') }}</van-radio>
-              <van-radio name="甲片">{{ $t('form.removalType.extension') }}</van-radio>
-              <van-radio name="无">{{ $t('form.removalType.none') }}</van-radio>
-            </van-radio-group>
-          </template>
-        </van-field>
-        <van-field
+    <!-- ═══ 定金说明 ═══ -->
+    <div class="deposit-box">
+      <div class="deposit-title">💎 预约需预付定金</div>
+      <div class="deposit-amt">¥{{ depositAmount.toLocaleString() }}</div>
+      <div class="deposit-desc">需提前 24 小时取消，否则定金不退。</div>
+    </div>
+
+    <!-- ═══ 表单 ═══ -->
+    <div class="form-section">
+      <!-- 姓名 -->
+      <div class="field-group">
+        <label class="field-label">姓名</label>
+        <input v-model="form.name" placeholder="怎么称呼你" class="awai-field" />
+      </div>
+
+      <!-- 联系方式 -->
+      <div class="field-group">
+        <label class="field-label">联系方式</label>
+        <input v-model="form.contactId" placeholder="小红书 / WeChat / LINE" class="awai-field" />
+        <div class="field-hint">使用首页登录的信息</div>
+      </div>
+
+      <!-- 卸甲类型 -->
+      <div class="field-group">
+        <label class="field-label">卸甲类型</label>
+        <div class="chip-row">
+          <button
+            v-for="opt in removalOptions"
+            :key="opt.value"
+            :class="['awai-chip', { selected: form.removalType === opt.value }]"
+            @click="form.removalType = opt.value"
+          >{{ opt.label }}</button>
+        </div>
+      </div>
+
+      <!-- 备注 -->
+      <div class="field-group">
+        <label class="field-label">备注（选填）</label>
+        <textarea
           v-model="form.remarks"
-          rows="2"
-          autosize
-          :label="$t('form.remarksLabel')"
-          type="textarea"
-          maxlength="50"
-          :placeholder="$t('form.remarksPlaceholder')"
-          show-word-limit
-        />
-        <van-field name="uploader" :label="$t('form.imageLabel')">
-          <template #input>
-            <van-uploader v-model="fileList" :after-read="afterRead" :max-count="1" />
-          </template>
-        </van-field>
-      </van-cell-group>
-    </van-form>
-    
-    <div class="bottom-action glass-effect">
-      <van-button round block type="primary" native-type="submit" form="booking-form" :loading="loading" class="apple-btn-active" size="large">
-        {{ $t('form.submitBtn') }}
-      </van-button>
+          class="awai-field"
+          rows="3"
+          placeholder="颜色偏好 / 长度 / 过敏情况等"
+          maxlength="200"
+        ></textarea>
+      </div>
+
+      <!-- 参考图上传 -->
+      <div class="field-group">
+        <label class="field-label">参考图（选填 · 最多 3 张）</label>
+        <van-uploader v-model="fileList" :after-read="afterRead" :max-count="3" multiple />
+      </div>
+    </div>
+
+    <!-- ═══ 底部 ═══ -->
+    <div class="bf-bottom">
+      <button class="bf-submit" :disabled="loading" @click="onSubmit">
+        <van-loading v-if="loading" size="18" color="#fff" style="margin-right:6px;" />
+        {{ loading ? '提交中...' : '确认预约' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { submitReservation, uploadImage } from '../api';
 import { showDialog } from 'vant';
 
 const router = useRouter();
-const { t } = useI18n();
 
-const customerType = ref('');
+const selectedService = JSON.parse(sessionStorage.getItem('selectedService') || 'null');
+const isNew = sessionStorage.getItem('customerType') === 'NEW';
 const reserveDate = ref('');
 const timeSlot = ref('');
 const loading = ref(false);
 
+// 定金：30% 或 动态计算
+const depositAmount = computed(() => {
+  if (!selectedService) return 500;
+  const price = isNew ? Math.round(selectedService.price * 0.8) : selectedService.price;
+  return Math.ceil(price * 0.3);
+});
+
+const removalOptions = [
+  { value: '本店续做', label: '本店续做（免费）' },
+  { value: '他店来·本甲', label: '他店来·本甲' },
+  { value: '他店来·甲片', label: '他店来·甲片' },
+  { value: '无', label: '不需要卸甲' },
+];
+
 const form = ref({
   name: sessionStorage.getItem('userName') || '',
   contactId: sessionStorage.getItem('userContactId') || '',
-  removalType: '本甲',
+  removalType: '本店续做',
   remarks: '',
-  referenceImage: ''
+  referenceImage: '',
 });
 
 const fileList = ref([]);
 
 const afterRead = async (file) => {
   file.status = 'uploading';
-  file.message = t('form.uploading');
-  
+  file.message = '上传中...';
   try {
-    const formData = new FormData();
-    formData.append('file', file.file);
-    const res = await uploadImage(formData);
-    
+    const fd = new FormData();
+    fd.append('file', file.file);
+    const res = await uploadImage(fd);
     if (res.code === 200) {
       file.status = 'done';
       form.value.referenceImage = res.data;
     } else {
       file.status = 'failed';
-      file.message = t('form.uploadFailed');
+      file.message = '上传失败';
     }
-  } catch (error) {
+  } catch {
     file.status = 'failed';
-    file.message = t('form.uploadFailed');
+    file.message = '上传失败';
   }
 };
 
 onMounted(() => {
-  customerType.value = sessionStorage.getItem('customerType') || '新客';
-  reserveDate.value = sessionStorage.getItem('reserveDate');
-  timeSlot.value = sessionStorage.getItem('timeSlot');
-  
+  reserveDate.value = sessionStorage.getItem('reserveDate') || '';
+  timeSlot.value = sessionStorage.getItem('timeSlot') || '';
   if (!reserveDate.value || !timeSlot.value) {
     router.replace('/');
   }
@@ -136,40 +154,29 @@ onMounted(() => {
 const goBack = () => router.back();
 
 const onSubmit = async () => {
+  if (!form.value.name.trim()) { showDialog({ message: '请填写姓名' }); return; }
+  if (!form.value.contactId.trim()) { showDialog({ message: '请填写联系方式' }); return; }
+  
   loading.value = true;
   try {
     const data = {
       ...form.value,
-      customerType: customerType.value,
+      customerType: isNew ? 'NEW' : 'OLD',
       reserveDate: reserveDate.value,
-      timeSlot: timeSlot.value
+      timeSlot: timeSlot.value,
+      totalAmount: depositAmount.value * 3, // deposit is 30%, so total = deposit * 3
     };
     const res = await submitReservation(data);
     if (res.code === 200) {
-      // 保存预约 ID，供支付页面使用
-      if (res.data) {
-        sessionStorage.setItem('lastReservationId', String(res.data));
-      }
+      if (res.data) sessionStorage.setItem('lastReservationId', String(res.data));
+      sessionStorage.setItem('depositAmount', String(depositAmount.value));
       router.replace('/success');
     } else {
-      showDialog({
-        title: t('form.submitFailed'),
-        message: res.message,
-      });
+      showDialog({ title: '提交失败', message: res.message });
     }
   } catch (error) {
-    // 处理后端抛出的400或409错误
-    if(error.response && error.response.data && error.response.data.message) {
-      showDialog({
-        title: 'Info',
-        message: error.response.data.message,
-      });
-    } else {
-      showDialog({
-        title: 'Error',
-        message: t('form.networkError'),
-      });
-    }
+    const msg = error?.response?.data?.message || '网络异常，请重试';
+    showDialog({ title: '错误', message: msg });
   } finally {
     loading.value = false;
   }
@@ -177,113 +184,170 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
-/* ─── Page shell ──────────────────────────────────── */
 .booking-form {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 0;
+  background: transparent;
+  padding-bottom: 80px;
 }
 
-/* ═══ 预约摘要 — AWAI frosted card ═══ */
+/* ─── Nav ─── */
+.bf-nav {
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  background: rgba(253,243,245,0.78);
+  border-bottom: 1px solid rgba(232,127,160,0.16);
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.bf-back {
+  width: 36px; height: 36px; border-radius: 999px;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid var(--pink-200);
+  display: grid; place-items: center; cursor: pointer;
+  box-shadow: var(--shadow-1); flex-shrink: 0;
+}
+.bf-back:active { transform: scale(0.95); }
+.bf-title {
+  flex: 1; text-align: center;
+  font-family: var(--font-cjk); font-weight: 800;
+  color: var(--ink-900); font-size: 15.5px;
+}
+
+/* ─── Summary ─── */
 .summary-card {
-  margin: var(--space-4);
-  padding: var(--space-5);
+  margin: 14px 14px 0;
+  padding: 14px 16px;
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-1);
 }
-.summary-title {
-  font-size: var(--fs-18);
-  font-weight: 600;
-  margin-bottom: var(--space-4);
-  color: var(--fg-1);
-  border-bottom: 1px solid var(--border-soft);
-  padding-bottom: var(--space-3);
-  font-family: var(--font-cjk);
-}
-.summary-item {
-  font-size: var(--fs-15);
-  color: var(--fg-2);
-  line-height: 1.8;
+.summary-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.summary-row + .summary-row {
+  border-top: 1px solid var(--border-soft);
+  margin-top: 6px;
+  padding-top: 10px;
+}
+.summary-label {
+  font-family: var(--font-cjk);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.summary-price {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--pink-600);
+}
+.summary-meta {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-500);
 }
 
-/* ═══ 定金提醒 — AWAI frosted card ═══ */
-.deposit-notice {
-  margin: var(--space-3) var(--space-4);
-  padding: var(--space-4);
-  background: var(--surface-frosted);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--border-soft);
+/* ─── Deposit ─── */
+.deposit-box {
+  margin: 12px 14px 0;
+  padding: 14px 16px;
+  background: #fef9e7;
+  border: 1px solid #fdecc8;
   border-radius: var(--radius-md);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-.deposit-icon {
-  font-size: 28px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.deposit-body {
-  flex: 1;
 }
 .deposit-title {
-  font-size: var(--fs-15);
-  font-weight: 600;
-  color: var(--pink-600);
-  margin-bottom: var(--space-1);
   font-family: var(--font-cjk);
+  font-weight: 700;
+  font-size: 14px;
+  color: #92400e;
 }
-.deposit-amount {
-  font-size: var(--fs-24);
+.deposit-amt {
+  font-family: var(--font-body);
   font-weight: 800;
-  color: var(--pink-500);
-  margin-bottom: var(--space-1);
+  font-size: 20px;
+  color: #d97706;
+  margin-top: 4px;
 }
 .deposit-desc {
-  font-size: var(--fs-13);
-  color: var(--fg-3);
-  line-height: 1.5;
+  font-family: var(--font-cjk);
+  font-size: 12px;
+  color: #a16207;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
-/* ─── Vant overrides ──────────────────────────────── */
-:deep(.van-cell-group--inset) {
-  margin: var(--space-4);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+/* ─── Form ─── */
+.form-section {
+  margin: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
-:deep(.van-field__label) {
-  color: var(--fg-1);
-  font-weight: 500;
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-family: var(--font-cjk);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-700);
+}
+.field-hint {
+  font-family: var(--font-cjk);
+  font-size: 11px;
+  color: var(--ink-400);
+  margin-top: -2px;
 }
 
-/* ─── Bottom action bar ───────────────────────────── */
-.bottom-action {
-  position: sticky;
-  bottom: 0;
-  margin-top: auto;
-  padding: var(--space-4) var(--space-6) var(--space-8) var(--space-6);
+/* ─── Chips ─── */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ─── Bottom ─── */
+.bf-bottom {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 12px 14px 24px;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--border-soft);
   z-index: 100;
 }
+.bf-submit {
+  width: 100%;
+  padding: 15px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #ff6b9d 0%, #e8436e 100%);
+  color: #fff;
+  font-family: var(--font-cjk);
+  font-size: 16px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(232,67,110,0.35);
+  transition: all var(--dur-base) var(--ease-soft);
+}
+.bf-submit:active { transform: scale(0.97); }
+.bf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-/* ─── Form layout ─────────────────────────────────── */
-.booking-form-inner {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.booking-form-inner > .van-cell-group {
-  margin-top: 0;
-}
-.bottom-action .van-button {
-  font-weight: 600;
+@media (min-width: 768px) {
+  .bf-bottom {
+    width: 390px;
+    left: calc(100vw - 390px);
+    right: auto;
+  }
 }
 </style>
