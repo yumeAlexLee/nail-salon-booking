@@ -39,7 +39,7 @@
           v-for="item in currentItems"
           :key="item.id"
           class="menu-item-card"
-          @click="goToBooking"
+          @click="goToBooking(item)"
         >
           <!-- 缩略图 -->
           <div class="item-thumb">
@@ -88,7 +88,10 @@ const loading = ref(true);
 const activeTab = ref('');
 
 const goBack = () => router.back();
-const goToBooking = () => router.push('/book');
+const goToBooking = (item) => {
+  if (item) sessionStorage.setItem('selectedService', JSON.stringify(item));
+  router.push('/book');
+};
 
 // 从 API 返回的 key 中提取中文分类名（格式："本甲|自爪ジェル"）
 const categoryList = computed(() => {
