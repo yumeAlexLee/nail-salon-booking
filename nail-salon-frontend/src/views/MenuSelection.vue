@@ -2,10 +2,8 @@
   <div class="menu-selection">
     <van-nav-bar :title="$t('nav.menu')" left-arrow @click-left="goBack" class="glass-effect" fixed placeholder :border="false" />
 
-    <!-- 加载中 -->
     <van-loading v-if="loading" size="24px" vertical style="margin-top: 80px;">{{ $t('date.loading') }}</van-loading>
 
-    <!-- 动态菜单列表 -->
     <div v-else class="menu-list">
       <div v-for="(items, categoryKey) in menuData" :key="categoryKey" class="menu-category">
         <div class="category-title">{{ categoryKey }}</div>
@@ -27,7 +25,7 @@
           </template>
           <template #tags>
             <van-tag v-if="item.nameJa" plain type="primary" size="small">{{ item.nameJa }}</van-tag>
-            <van-tag v-if="isNewCustomer" type="danger" size="small" style="margin-left:4px;">新客8折</van-tag>
+            <van-tag v-if="isNewCustomer" type="danger" size="small" style="margin-left:4px;">新客 8 折</van-tag>
           </template>
           <template #num>
             <div class="num-area">
@@ -53,13 +51,8 @@ const isNewCustomer = sessionStorage.getItem('customerType') === 'NEW';
 const menuData = ref({});
 const loading = ref(true);
 
-const goBack = () => {
-  router.back();
-};
-
-const goToBooking = () => {
-  router.push('/book');
-};
+const goBack = () => router.back();
+const goToBooking = () => router.push('/book');
 
 const previewCategoryImages = (items) => {
   const images = items.map(item => item.imageUrl).filter(url => url);
@@ -83,11 +76,9 @@ onMounted(async () => {
 <style scoped>
 .menu-selection {
   min-height: 100vh;
-  background-color: var(--apple-bg);
   display: flex;
   flex-direction: column;
 }
-/* 菜单列表 */
 .menu-list {
   padding: 16px;
   flex: 1;
@@ -96,34 +87,47 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 .category-title {
+  font-family: var(--font-cjk);
   font-size: 18px;
   font-weight: 700;
-  color: var(--apple-text);
+  color: var(--ink-900);
   margin-bottom: 10px;
   padding-left: 4px;
 }
 .menu-card {
   margin-bottom: 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--border-soft);
   cursor: pointer;
 }
 :deep(.van-card) {
-  background-color: var(--apple-white);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 :deep(.van-card__title) {
+  font-family: var(--font-cjk);
   font-weight: 600;
   font-size: 15px;
+  color: var(--ink-900);
 }
 :deep(.van-card__desc) {
+  font-family: var(--font-cjk);
   font-size: 12px;
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
 }
 :deep(.van-card__price) {
-  color: #ee0a24;
+  color: var(--pink-600);
   font-weight: 700;
   font-size: 16px;
+  font-family: var(--font-body);
+}
+:deep(.van-card__origin-price) {
+  text-decoration: line-through;
+  color: var(--ink-400) !important;
+  font-size: 12px;
 }
 .num-area {
   display: flex;
@@ -133,22 +137,21 @@ onMounted(async () => {
 }
 .duration-text {
   font-size: 12px;
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
+  font-family: var(--font-cjk);
 }
 .num-area .van-button--mini {
   font-size: 11px;
   padding: 0 10px;
 }
-
-/* ─── 项目示意图缩略图 ──────────────────────────── */
 .menu-thumb {
   width: 88px;
   height: 88px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f7;
-  border-radius: 12px;
+  background: var(--pink-50);
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
 }
@@ -165,12 +168,11 @@ onMounted(async () => {
   font-size: 30px;
   opacity: 0.4;
 }
-/* ─────────────────────────────────────────────── */
-
 .empty-tip {
   text-align: center;
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
   padding: 40px 0;
   font-size: 15px;
+  font-family: var(--font-cjk);
 }
 </style>

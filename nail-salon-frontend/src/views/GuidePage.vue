@@ -30,7 +30,7 @@ const goBack = () => {
 <style scoped>
 .guide-page {
   min-height: 100vh;
-  background-color: var(--apple-bg);
+  background: var(--surface-bg);
 }
 .images-container {
   display: flex;
@@ -39,11 +39,17 @@ const goBack = () => {
   gap: 20px;
   max-width: 800px;
   margin: 0 auto;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
 }
 .guide-image {
   width: 100%;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
   display: block;
 }
 </style>

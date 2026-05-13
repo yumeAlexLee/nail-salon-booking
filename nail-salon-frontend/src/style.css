@@ -1,75 +1,316 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=ZCOOL+KuaiLe&display=swap');
+/* ============================================================
+   AWAI NAIL — Design Tokens & Global Styles
+   Soft, kawaii, watercolor. Pink dominant, cream paper neutrals.
+   ============================================================ */
+
+/* Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Nunito:wght@300;400;500;600;700;800&family=Zen+Maru+Gothic:wght@400;500;700&family=Long+Cang&display=swap");
 
 :root {
-  /* Apple x Sanrio High-end Collab Typography & Colors */
-  --apple-bg: #fffafb; /* 极浅的暖白粉 */
-  --apple-text: #2d2628; /* 深灰棕色，不刺眼的黑 */
-  --apple-text-secondary: #8a8083; /* 灰粉色 */
-  --apple-blue: #ff6b8b; /* 主题粉色 */
-  --apple-black: #ff6b8b; /* 所有的黑全部转为哑光玫瑰粉 */
-  --apple-white: #ffffff;
-  
-  /* Vant Global Overrides */
-  --van-primary-color: var(--apple-black);
-  --van-text-color: var(--apple-text);
-  --van-background-2: var(--apple-white);
-  --van-border-radius-md: 14px;
-  --van-border-radius-lg: 20px;
-  --van-border-radius-max: 999px;
-  --van-button-primary-background: var(--apple-black);
-  --van-button-primary-border-color: var(--apple-black);
-  --van-button-border-radius: 16px;
-  --van-cell-background: var(--apple-white);
-  --van-nav-bar-background: rgba(255, 255, 255, 0.7);
-  --van-nav-bar-icon-color: var(--apple-text);
-  --van-nav-bar-text-color: var(--apple-text);
-  --van-nav-bar-title-text-color: var(--apple-text);
+  /* ---------- Color: Pink scale ---------- */
+  --pink-50:  #fdf3f5;
+  --pink-100: #fae3e9;
+  --pink-200: #f8d2dd;
+  --pink-300: #f4b9c9;
+  --pink-400: #efa1b8;
+  --pink-500: #e87fa0;   /* primary brand pink */
+  --pink-600: #d96489;
+  --pink-700: #b94c6f;
+
+  /* ---------- Color: Paper / Cream neutrals ---------- */
+  --paper-50:  #fbf8f3;
+  --paper-100: #f3ece1;
+  --paper-200: #e7dccb;
+  --paper-300: #d4c4a9;
+  --paper-400: #ad9a7c;
+  --paper-500: #8a7a5e;
+
+  /* ---------- Color: Ink ---------- */
+  --ink-900: #1a1a1a;
+  --ink-700: #3d3a36;
+  --ink-500: #6b665e;
+  --ink-400: #948d80;
+  --ink-300: #c4bdb0;
+
+  /* ---------- Color: Sky ---------- */
+  --sky-100: #e6f0f3;
+  --sky-300: #b9d6df;
+  --sky-500: #7eafbe;
+
+  /* ---------- Color: Semantic accents ---------- */
+  --accent-red:    #d44a4a;
+  --accent-yellow: #f5c64a;
+  --accent-green:  #4ea35a;
+
+  /* ---------- Surfaces & overlays ---------- */
+  --surface-bg:            var(--pink-50);
+  --surface-card:          #ffffff;
+  --surface-paper:         var(--paper-100);
+  --surface-frosted:       rgba(255, 255, 255, 0.72);
+  --surface-frosted-strong: rgba(255, 255, 255, 0.88);
+
+  /* ---------- Semantic text ---------- */
+  --fg-1: var(--ink-700);
+  --fg-2: var(--ink-500);
+  --fg-3: var(--ink-400);
+  --fg-on-pink: #ffffff;
+  --fg-link: var(--pink-600);
+
+  /* ---------- Borders ---------- */
+  --border-soft:  rgba(232, 127, 160, 0.18);
+  --border-paper: rgba(138, 122, 94, 0.22);
+
+  /* ---------- Radii ---------- */
+  --radius-xs:   6px;
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+  --radius-2xl:  40px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadows (pink-tinted, never gray) ---------- */
+  --shadow-1: 0 1px 2px rgba(232, 127, 160, 0.08), 0 1px 1px rgba(60, 40, 50, 0.04);
+  --shadow-2: 0 4px 14px rgba(232, 127, 160, 0.14), 0 2px 4px rgba(60, 40, 50, 0.05);
+  --shadow-3: 0 12px 30px rgba(232, 127, 160, 0.18), 0 4px 10px rgba(60, 40, 50, 0.06);
+  --shadow-press: inset 0 2px 4px rgba(185, 76, 111, 0.18);
+
+  /* ---------- Spacing ---------- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---------- Motion ---------- */
+  --ease-soft:   cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:   140ms;
+  --dur-base:   220ms;
+  --dur-slow:   420ms;
+
+  /* ---------- Typography ---------- */
+  --font-display: "Caveat Brush", "Brush Script MT", cursive;
+  --font-script:  "Long Cang", "Caveat Brush", cursive;
+  --font-cjk:     "Zen Maru Gothic", "PingFang SC", "Hiragino Maru Gothic ProN", "Microsoft YaHei", system-ui, sans-serif;
+  --font-body:    "Nunito", "Zen Maru Gothic", "PingFang SC", system-ui, -apple-system, sans-serif;
+
+  /* ---------- Font sizes ---------- */
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-18: 18px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-28: 28px;
+  --fs-32: 32px;
+  --fs-40: 40px;
+  --fs-56: 56px;
+  --fs-72: 72px;
+
+  /* ---------- Vant 4 Theme Overrides ---------- */
+  --van-primary-color: var(--pink-500);
+  --van-text-color: var(--ink-700);
+  --van-background-2: #ffffff;
+  --van-border-radius-md: var(--radius-md);
+  --van-border-radius-lg: var(--radius-lg);
+  --van-border-radius-max: var(--radius-pill);
+  --van-button-primary-background: var(--pink-500);
+  --van-button-primary-border-color: var(--pink-500);
+  --van-button-border-radius: var(--radius-pill);
+  --van-cell-background: transparent;
+  --van-nav-bar-background: rgba(253, 243, 245, 0.78);
+  --van-nav-bar-icon-color: var(--ink-700);
+  --van-nav-bar-text-color: var(--ink-700);
+  --van-nav-bar-title-text-color: var(--ink-900);
   --van-nav-bar-title-font-size: 17px;
-  --van-radio-checked-icon-color: var(--apple-black);
-  --van-calendar-selected-day-background: var(--apple-black);
-  --van-toast-background: rgba(0, 0, 0, 0.8);
-  --van-toast-border-radius: 14px;
+  --van-radio-checked-icon-color: var(--pink-500);
+  --van-calendar-selected-day-background: var(--pink-500);
+  --van-calendar-day-range-edge-background: var(--pink-500);
+  --van-toast-background: rgba(40, 20, 30, 0.85);
+  --van-toast-border-radius: var(--radius-lg);
+  --van-tag-primary-color: var(--pink-500);
+  --van-tag-danger-color: var(--accent-red);
+  --van-tag-success-color: var(--accent-green);
+  --van-grid-item-content-padding: var(--space-4);
+  --van-cell-vertical-padding: 12px;
+  --van-field-label-width: 5em;
+  --van-field-label-color: var(--ink-500);
+  --van-button-primary-color: #ffffff;
 }
 
-body, html, #app {
+/* ─────────── Base ─────────── */
+html, body, #app {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: var(--apple-bg);
-  color: var(--apple-text);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", "Roboto", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--surface-bg);
+  color: var(--fg-1);
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 消除所有 NavBar 的底边线，配合毛玻璃 */
+/* ─────────── Background plates ─────────── */
+.bg-plate {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center;
+}
+.bg-plate::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(253, 243, 245, 0.30);
+  pointer-events: none;
+}
+
+/* ─────────── Frosted glass card ─────────── */
+.frost-card {
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-6);
+}
+.frost-card-soft {
+  background: var(--surface-frosted);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+}
+
+/* ─────────── NavBar base line REMOVER ─────────── */
 .van-hairline--bottom::after {
   border-bottom-width: 0 !important;
 }
 
-/* 毛玻璃工具类 */
-.glass-effect {
-  background-color: rgba(255, 255, 255, 0.7);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-
-/* ─── 统一背景图支持 ──────────────────────────────
-   各页面容器去掉实色背景，让 App.vue 的背景图透出
-   背景图文件放 public/bg.jpg
-   如需关闭，注释 App.vue 的 background 行即可
-   ──────────────────────────────────────────────── */
+/* ─────────── Page containers: transparent for bg ─────────── */
 .home, .booking-form, .menu-selection, .success-result,
-.date-time-select, .guide-page, .portfolio-page {
-  background-color: transparent !important;
+.date-time-select, .guide-page, .portfolio-page, .my-booking {
+  background: transparent !important;
+  position: relative;
 }
 
-/* 苹果风按压阻尼动画 */
+/* ─────────── Press animation ─────────── */
 .apple-btn-active:active {
-  transform: scale(0.96);
-  opacity: 0.8;
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transform: scale(0.97);
+  transition: transform var(--dur-fast) var(--ease-bounce);
 }
-.apple-transition {
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+
+/* ─────────── AWAI Wordmark ─────────── */
+.awai-wordmark {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 0.95;
+  letter-spacing: 0.12em;
+  color: var(--ink-900);
+  text-shadow: 0 2px 8px rgba(120, 50, 70, 0.12);
+  transform: rotate(-2deg);
+  text-transform: uppercase;
+  display: inline-block;
+  user-select: none;
+}
+
+/* ─────────── Eyebrow label ─────────── */
+.awai-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink-600);
+}
+
+/* ─────────── Type helpers ─────────── */
+.t-cjk {
+  font-family: var(--font-cjk);
+}
+
+/* ─────────── Avatar circle ─────────── */
+.awai-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--pink-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pink-600);
+  font-size: var(--fs-20);
+  flex-shrink: 0;
+}
+
+/* ─────────── Status badge ─────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 10.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.status-badge.pending { background: #fef6e0; color: #b8860b; }
+.status-badge.confirmed { background: #dbf0de; color: var(--accent-green); }
+.status-badge.completed { background: var(--paper-100); color: var(--ink-700); }
+.status-badge.cancelled { background: #fde0e0; color: var(--accent-red); }
+
+/* ─────────── AWAI-style chips ─────────── */
+.awai-chip {
+  font-family: var(--font-cjk);
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--pink-200);
+  background: var(--pink-50);
+  color: var(--pink-700);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur-base) var(--ease-soft);
+}
+.awai-chip.selected {
+  background: var(--pink-500);
+  color: #fff;
+  border-color: var(--pink-500);
+  box-shadow: var(--shadow-2);
+}
+
+/* ─────────── AWAI input ─────────── */
+.awai-field {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink-900);
+  padding: 12px 14px;
+  background: var(--pink-50);
+  border: 1px solid var(--pink-200);
+  border-radius: var(--radius-md);
+  outline: 0;
+  transition: all var(--dur-base) var(--ease-soft);
+}
+.awai-field:focus {
+  border-color: var(--pink-500);
+  box-shadow: 0 0 0 3px rgba(232, 127, 160, 0.15);
+}
+.awai-field.error {
+  border-color: var(--accent-red);
 }

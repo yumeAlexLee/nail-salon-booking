@@ -2,7 +2,7 @@
   <div class="success-result">
     <!-- 成功动画 -->
     <div class="result-icon">
-      <van-icon name="checked" color="var(--apple-blue)" size="80" />
+      <van-icon name="checked" color="var(--accent-green)" size="80" />
     </div>
     <h2 class="title">{{ $t('success.title') }}</h2>
     <p class="desc">{{ $t('success.desc') }}</p>
@@ -47,11 +47,11 @@
     <!-- 店铺地址和指引模块 -->
     <div class="store-info-card">
       <div class="info-header">
-        <van-icon name="location" size="20" color="var(--apple-black)" />
+        <van-icon name="location" size="20" color="var(--ink-900)" />
         <span class="info-text">{{ $t('home.location') }}</span>
       </div>
       <div class="guide-action">
-        <van-button plain round block size="normal" color="var(--apple-text-secondary)" @click="showGuidePreview" class="apple-btn-active">
+        <van-button plain round block size="normal" color="var(--ink-500)" @click="showGuidePreview" class="apple-btn-active">
           {{ $t('home.showGuide') }}
         </van-button>
       </div>
@@ -134,9 +134,10 @@ const goHome = () => {
 .success-result {
   text-align: center;
   padding: 48px 24px 120px 24px;
-  background-color: var(--apple-bg);
+  background: transparent;
   min-height: 100vh;
   box-sizing: border-box;
+  font-family: var(--font-cjk);
 }
 .result-icon {
   margin-bottom: 24px;
@@ -144,23 +145,26 @@ const goHome = () => {
 }
 .title {
   font-size: 28px;
-  color: var(--apple-text);
-  font-weight: 600;
+  color: var(--ink-900);
+  font-weight: 700;
   margin-bottom: 12px;
   letter-spacing: -0.5px;
 }
 .desc {
   font-size: 16px;
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
   line-height: 1.6;
   margin-bottom: 32px;
 }
 
-/* ─── 定金支付卡片 ─────────────────────────────── */
+/* ─── 定金支付卡片 (AWAI frosted card) ───────────── */
 .payment-card {
-  background: #fffbe6;
-  border: 1px solid #ffe58f;
-  border-radius: 20px;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
   padding: 24px;
   margin-bottom: 24px;
   text-align: left;
@@ -174,22 +178,22 @@ const goHome = () => {
 }
 .payment-label {
   font-size: 16px;
-  font-weight: 600;
-  color: #7a5800;
+  font-weight: 700;
+  color: var(--pink-600);
 }
 .payment-amount {
   font-size: 24px;
-  font-weight: 700;
-  color: #d48806;
+  font-weight: 800;
+  color: var(--pink-500);
 }
 .payment-desc {
   font-size: 13px;
-  color: #a67c00;
+  color: var(--ink-400);
   margin-bottom: 20px;
   line-height: 1.5;
 }
 
-/* ─── 支付方式按钮 ─────────────────────────────── */
+/* ─── 支付方式按钮 (AWAI-style chips) ────────────── */
 .payment-methods {
   display: flex;
   gap: 12px;
@@ -201,15 +205,16 @@ const goHome = () => {
   align-items: center;
   gap: 8px;
   padding: 16px 8px;
-  background: white;
-  border: 1.5px solid #ffe0a0;
-  border-radius: 14px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-base) var(--ease-soft);
 }
 .method-item:active {
   transform: scale(0.96);
-  background: #fff8e0;
+  background: var(--pink-50);
+  border-color: var(--pink-300);
 }
 .method-item.paying {
   opacity: 0.6;
@@ -220,27 +225,40 @@ const goHome = () => {
 }
 .method-name {
   font-size: 13px;
-  font-weight: 600;
-  color: #7a5800;
+  font-weight: 700;
+  color: var(--ink-700);
 }
+
 /* ─── 已付款待确认状态 ─────────────────────────── */
 .customer-paid-section {
   text-align: center;
   padding: 8px 0;
 }
+.paid-animation {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.paid-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
 .paid-desc {
   font-size: 14px;
-  color: #d48806;
+  color: var(--ink-500);
   margin-top: 6px;
   line-height: 1.5;
 }
 /* ─────────────────────────────────────────────── */
 
 .store-info-card {
-  background-color: var(--apple-white);
-  border-radius: 20px;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
   padding: 24px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.04);
   margin-bottom: 40px;
 }
 .info-header {
@@ -251,9 +269,22 @@ const goHome = () => {
 }
 .info-text {
   font-size: 16px;
-  color: var(--apple-text);
+  color: var(--ink-900);
   font-weight: 600;
   margin-left: 8px;
+}
+
+.bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 24px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-soft);
 }
 
 /* ─── 动画 ────────────────────────────────────────── */

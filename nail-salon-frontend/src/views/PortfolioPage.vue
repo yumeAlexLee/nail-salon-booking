@@ -7,7 +7,7 @@
       <p>精选美甲作品展示 / ネイルギャラリー</p>
     </div>
 
-    <!-- 瀑布流双列排版 -->
+    <!-- ═══ 瀑布流双列排版 — AWAI frosted glass ═══ -->
     <div class="waterfall-container">
       <div class="waterfall-item" v-for="(img, index) in portfolioImages" :key="index" @click="previewImage(index)">
         <img :src="img" class="portfolio-img" alt="Nail Art Work" />
@@ -61,26 +61,40 @@ const previewImage = (index) => {
 <style scoped>
 .portfolio-page {
   min-height: 100vh;
-  background-color: var(--apple-bg);
+  background: var(--surface-bg);
   padding-bottom: 60px;
 }
+
+/* ─── Description: AWAI frosted glass ─── */
 .portfolio-desc {
   text-align: center;
-  padding: 30px 20px 20px;
+  margin: 20px 20px 24px;
+  padding: 22px 18px;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
 }
 .portfolio-desc h2 {
-  font-family: 'Noto Serif SC', serif;
-  font-size: 24px;
-  color: var(--apple-text);
-  margin: 0 0 8px 0;
+  font-family: var(--font-cjk);
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink-900);
+  margin: 0 0 6px 0;
+  line-height: 1.3;
 }
 .portfolio-desc p {
-  font-size: 13px;
-  color: var(--apple-text-secondary);
+  font-family: var(--font-cjk);
+  font-size: 12.5px;
+  color: var(--pink-600);
   margin: 0;
+  letter-spacing: 0.02em;
 }
+
+/* ─── Waterfall: CSS columns + AWAI frosted glass ─── */
 .waterfall-container {
-  /* 使用纯 CSS columns 实现瀑布流效果 */
   columns: 2;
   column-gap: 16px;
   padding: 0 16px;
@@ -88,11 +102,14 @@ const previewImage = (index) => {
 .waterfall-item {
   break-inside: avoid;
   margin-bottom: 16px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(255, 107, 139, 0.1);
-  background-color: var(--apple-white);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-2);
+  transition: all var(--dur-base) var(--ease-soft);
   cursor: pointer;
 }
 .waterfall-item:active {
@@ -102,8 +119,7 @@ const previewImage = (index) => {
 .portfolio-img {
   width: 100%;
   display: block;
-  /* 加入一个浅色底，防止图片没加载出来时难看 */
-  background-color: #fce4ec;
+  background: var(--pink-100);
   min-height: 100px;
 }
 </style>

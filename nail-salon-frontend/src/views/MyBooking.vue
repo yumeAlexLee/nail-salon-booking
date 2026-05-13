@@ -11,7 +11,7 @@
 
     <!-- 联系方式输入区（未登录时显示） -->
     <div v-if="showSearch" class="search-section">
-      <div class="search-card">
+      <div class="search-card frost-card-soft">
         <van-field
           v-model="contactId"
           :placeholder="$t('booking.contactPlaceholder')"
@@ -21,7 +21,7 @@
           size="large"
         >
           <template #left-icon>
-            <van-icon name="phone-o" size="20" color="var(--apple-blue)" />
+            <van-icon name="phone-o" size="20" color="var(--pink-500)" />
           </template>
           <template #button>
             <van-button
@@ -75,9 +75,9 @@
             <span class="date-label">{{ formatDate(r.reserveDate) }}</span>
             <span class="time-label">{{ r.timeSlot }}</span>
           </div>
-          <van-tag :type="statusTagType(r.status)" size="medium" round>
+          <span :class="['status-badge', statusBadgeClass(r.status)]">
             {{ statusLabel(r.status) }}
-          </van-tag>
+          </span>
         </div>
 
         <!-- 待付定金催付提示 -->
@@ -143,7 +143,7 @@
       v-model:show="showCancelDialog"
       :title="$t('booking.cancel')"
       :show-cancel-button="true"
-      confirm-button-color="#ee0a24"
+      confirm-button-color="var(--pink-500)"
       @confirm="doCancel"
     >
       <div class="cancel-dialog-content">
@@ -156,7 +156,7 @@
       v-model:show="showRescheduleCalendar"
       :min-date="minDate"
       :max-date="maxDate"
-      color="var(--apple-blue)"
+      color="var(--pink-500)"
       @confirm="onCalendarConfirm"
     />
 
@@ -192,7 +192,7 @@
       v-model:show="showRescheduleConfirm"
       :title="$t('booking.reschedule')"
       :show-cancel-button="true"
-      confirm-button-color="var(--apple-blue)"
+      confirm-button-color="var(--pink-500)"
       @confirm="doReschedule"
     >
       <div class="cancel-dialog-content">
@@ -290,11 +290,12 @@ const searchReservations = async () => {
   }
 };
 
-const statusTagType = (status) => {
-  if (status === 'CONFIRMED') return 'success';
-  if (status === 'COMPLETED') return 'success';
-  if (status === 'PENDING_DEPOSIT') return 'warning';
-  return 'default';
+const statusBadgeClass = (status) => {
+  if (status === 'CONFIRMED') return 'confirmed';
+  if (status === 'COMPLETED') return 'completed';
+  if (status === 'CANCELLED') return 'cancelled';
+  if (status === 'PENDING_DEPOSIT') return 'pending';
+  return 'pending';
 };
 
 const statusLabel = (status) => {
@@ -393,57 +394,61 @@ const doReschedule = async () => {
 <style scoped>
 .my-booking {
   min-height: 100vh;
-  background-color: var(--apple-bg);
+  background: var(--surface-bg);
   display: flex;
   flex-direction: column;
+}
+
+/* ─────────── Navigation bar frosted glass ─────────── */
+.glass-effect {
+  background: rgba(253, 243, 245, 0.78) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 /* 切换账号行 */
 .switch-account-row {
   display: flex;
   justify-content: flex-end;
-  padding: 8px 16px 0;
+  padding: var(--space-2) var(--space-4) 0;
 }
 .switch-account-btn {
-  font-size: 12px;
-  color: var(--apple-text-secondary);
+  font-size: var(--fs-12);
+  color: var(--ink-500);
 }
 
 /* 搜索区域 */
 .search-section {
-  padding: 12px 16px;
-}
-.search-card {
-  background: var(--apple-white);
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-  overflow: hidden;
+  padding: var(--space-3) var(--space-4);
 }
 
 /* 空状态 */
 .empty-state {
   text-align: center;
   margin-top: 80px;
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
 }
 .empty-state p {
-  margin-top: 12px;
-  font-size: 15px;
+  margin-top: var(--space-3);
+  font-size: var(--fs-15);
 }
 
 /* 预约列表 */
 .booking-list {
-  padding: 0 16px 40px;
+  padding: 0 var(--space-4) var(--space-10);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .booking-card {
-  background: var(--apple-white);
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
   overflow: hidden;
-  transition: all 0.2s;
+  transition: all var(--dur-base) var(--ease-soft);
 }
 .booking-card.is-cancelled {
   opacity: 0.65;
@@ -457,17 +462,17 @@ const doReschedule = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 16px 8px;
+  padding: var(--space-4) var(--space-4) var(--space-2);
 }
 .date-label {
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 600;
-  color: var(--apple-text);
+  color: var(--ink-700);
 }
 .time-label {
-  font-size: 13px;
-  color: var(--apple-text-secondary);
-  margin-left: 8px;
+  font-size: var(--fs-13);
+  color: var(--ink-500);
+  margin-left: var(--space-2);
 }
 
 /* 待付定金提示条 */
@@ -475,81 +480,81 @@ const doReschedule = async () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 16px 8px;
-  padding: 8px 12px;
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: #fffbe6;
-  border-radius: 10px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-12);
   color: #d48806;
 }
 
 /* 卡片详情 */
 .card-body {
-  padding: 4px 16px 12px;
+  padding: 4px var(--space-4) var(--space-3);
 }
 .info-row {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 .info-key {
-  color: var(--apple-text-secondary);
+  color: var(--ink-500);
 }
 .info-val {
-  color: var(--apple-text);
+  color: var(--ink-700);
   font-weight: 500;
   text-align: right;
 }
 
 /* 定金状态颜色 */
-.deposit-paid { color: #07c160; }
-.deposit-pending { color: #ff6b8b; }
-.deposit-refunded { color: #969799; }
-.deposit-forfeited { color: #ee0a24; }
+.deposit-paid { color: var(--accent-green); }
+.deposit-pending { color: var(--pink-500); }
+.deposit-refunded { color: var(--ink-400); }
+.deposit-forfeited { color: var(--accent-red); }
 
 /* 操作区 */
 .card-action {
-  padding: 0 16px 12px;
+  padding: 0 var(--space-4) var(--space-3);
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .action-btn {
-  font-size: 12px;
+  font-size: var(--fs-12);
 }
 
 /* 取消/改期弹窗 */
 .cancel-dialog-content {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   text-align: center;
-  font-size: 15px;
-  color: var(--apple-text);
+  font-size: var(--fs-15);
+  color: var(--ink-700);
   line-height: 1.6;
 }
 .new-time-preview {
-  margin-top: 8px;
-  font-size: 18px;
+  margin-top: var(--space-2);
+  font-size: var(--fs-18);
   font-weight: 600;
-  color: var(--apple-blue);
+  color: var(--pink-500);
 }
 
 /* 时间段列表 */
 .slot-list {
-  padding: 12px 16px 32px;
+  padding: var(--space-3) var(--space-4) var(--space-8);
 }
 .slot-empty {
   text-align: center;
-  padding: 32px;
-  color: var(--apple-text-secondary);
-  font-size: 15px;
+  padding: var(--space-8);
+  color: var(--ink-500);
+  font-size: var(--fs-15);
 }
 .slot-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid var(--apple-separator, #f0f0f0);
+  border-bottom: 1px solid var(--border-soft);
   cursor: pointer;
 }
 .slot-item:last-child {
@@ -560,8 +565,8 @@ const doReschedule = async () => {
   cursor: not-allowed;
 }
 .slot-time {
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 500;
-  color: var(--apple-text);
+  color: var(--ink-700);
 }
 </style>

@@ -565,7 +565,7 @@ const handleCancelReservation = (reservation) => {
   showConfirmDialog({
     title: '取消预约',
     message: `确定要取消客人【${reservation.name}】的这笔预约吗？取消后该时间段将释放给其他客户。如需恢复，可在「已取消」标签页中操作。`,
-    confirmButtonColor: '#ee0a24'
+    confirmButtonColor: 'var(--accent-red)'
   }).then(async () => {
     loading.value = true;
     try {
@@ -586,7 +586,7 @@ const handleRestore = (id, name) => {
   showConfirmDialog({
     title: '恢复预约',
     message: `确定要恢复客人【${name}】的预约吗？恢复后该时间段将重新为此客户锁定。`,
-    confirmButtonColor: '#07c160'
+    confirmButtonColor: 'var(--accent-green)'
   }).then(async () => {
     loading.value = true;
     try {
@@ -668,7 +668,7 @@ const handleDeleteMenu = (id, name) => {
   showConfirmDialog({
     title: '删除项目',
     message: `确定要删除【${name}】吗？`,
-    confirmButtonColor: '#ee0a24'
+    confirmButtonColor: 'var(--accent-red)'
   }).then(async () => {
     try {
       await deleteMenuItem(id);
@@ -725,7 +725,7 @@ const handleDepositRefunded = async (id) => {
   showConfirmDialog({
     title: '退款确认',
     message: '确定要退还该预约的定金吗？',
-    confirmButtonColor: '#07c160'
+    confirmButtonColor: 'var(--accent-green)'
   }).then(async () => {
     try {
       await markDepositRefunded(id);
@@ -742,7 +742,7 @@ const handleForfeitDeposit = async (id) => {
   showConfirmDialog({
     title: '没收定金',
     message: '客户未到店，确定没收定金吗？',
-    confirmButtonColor: '#ee0a24'
+    confirmButtonColor: 'var(--accent-red)'
   }).then(async () => {
     try {
       await forfeitDeposit(id);
@@ -962,7 +962,7 @@ const handleForfeitDeposit = async (id) => {
   margin-top: 4px;
 }
 .item-price {
-  color: #ee0a24;
+  color: var(--accent-red);
   font-weight: 600;
 }
 .menu-editor {

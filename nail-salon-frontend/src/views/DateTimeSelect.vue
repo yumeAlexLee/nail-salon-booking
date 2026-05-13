@@ -19,7 +19,6 @@
         :formatter="dayFormatter"
         :row-height="76"
         @confirm="onDateSelect"
-        style="height: 420px;"
       />
     </div>
 
@@ -127,16 +126,21 @@ const goToForm = () => {
 <style scoped>
 .date-time-select {
   min-height: 100vh;
-  background-color: var(--apple-bg);
+  background: var(--surface-bg);
   display: flex;
   flex-direction: column;
 }
+
+/* ─── Calendar card: frosted glass ─── */
 .calendar-wrapper {
   margin: 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-  background: var(--apple-white);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-2);
   flex-shrink: 0;
 }
 :deep(.van-calendar__header) {
@@ -155,51 +159,56 @@ const goToForm = () => {
 }
 .slots-title {
   margin: 24px 0 16px 4px;
-  font-size: 18px;
-  color: var(--apple-text);
+  font-size: var(--fs-18);
+  color: var(--fg-1);
   font-weight: 600;
+  font-family: var(--font-cjk);
 }
 :deep(.slot-item .van-grid-item__content) {
   padding: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background-color: transparent;
 }
 .slot-content {
   width: 100%;
   padding: 16px 0;
-  background-color: var(--apple-white);
-  border: 1px solid rgba(0,0,0,0.05);
-  border-radius: 14px;
+  background: var(--surface-frosted);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: var(--shadow-1);
+  transition: all var(--dur-base) var(--ease-soft);
 }
 .slot-text {
   font-size: 17px;
-  color: var(--apple-text);
+  color: var(--fg-1);
   font-weight: 600;
 }
 .slot-status {
-  font-size: 13px;
-  color: var(--apple-text-secondary);
+  font-size: var(--fs-13);
+  color: var(--fg-2);
   margin-top: 4px;
 }
 .slot-disabled .slot-content {
-  background-color: #f5f5f7;
+  background: var(--pink-50);
   opacity: 0.6;
   border: none;
   box-shadow: none;
 }
 .slot-active .slot-content {
-  background-color: var(--apple-black);
-  border-color: var(--apple-black);
+  background: var(--pink-500);
+  border-color: var(--pink-500);
+  box-shadow: var(--shadow-2);
 }
 .slot-active .slot-text,
 .slot-active .slot-status {
-  color: var(--apple-white);
+  color: var(--fg-on-pink);
 }
 
 /* ─── 底部按钮：sticky 吸附，不受 transform 影响 ─── */
@@ -208,12 +217,17 @@ const goToForm = () => {
   bottom: 0;
   padding: 16px 24px 32px 24px;
   margin-top: 12px;
-  border-top: 1px solid rgba(0,0,0,0.05);
+  border-top: 1px solid var(--border-soft);
   z-index: 100;
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 .bottom-btn .van-button {
   font-weight: 600;
 }
+
+/* ─── 节假日文字 ─── */
 :deep(.van-calendar__bottom-info) {
   white-space: normal;
   word-break: break-all;
@@ -223,12 +237,12 @@ const goToForm = () => {
   margin-top: 2px;
 }
 :deep(.holiday-text) .van-calendar__bottom-info {
-  color: var(--apple-text-secondary);
+  color: var(--fg-3);
   font-weight: 500;
   transform: scale(0.9);
 }
 :deep(.van-calendar__day--selected .van-calendar__bottom-info) {
-  color: var(--apple-white) !important;
+  color: var(--fg-on-pink) !important;
 }
 :deep(.van-calendar__day--selected) {
   border-radius: 12px;

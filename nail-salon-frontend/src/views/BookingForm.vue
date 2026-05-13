@@ -7,6 +7,7 @@
       class="glass-effect" fixed placeholder :border="false"
     />
     
+    <!-- ═══ 预约摘要 — AWAI frosted card ═══ -->
     <div class="summary-card">
       <div class="summary-title">{{ $t('form.summaryTitle') }}</div>
       <div class="summary-item">{{ $t('form.date') }}：{{ reserveDate }}</div>
@@ -14,7 +15,7 @@
       <div class="summary-item">{{ $t('form.identity') }}：{{ customerType === 'NEW' ? $t('home.newCustomer') : $t('home.oldCustomer') }}</div>
     </div>
 
-    <!-- ─── 定金预付提醒 ─────────────────────────────── -->
+    <!-- ═══ 定金预付提醒 — AWAI frosted card ═══ -->
     <div class="deposit-notice">
       <div class="deposit-icon">💰</div>
       <div class="deposit-body">
@@ -23,7 +24,6 @@
         <div class="deposit-desc">预约成功后请完成定金支付，到店后自动抵扣服务费用。</div>
       </div>
     </div>
-    <!-- ─────────────────────────────────────────────── -->
 
     <van-form id="booking-form" @submit="onSubmit" class="booking-form-inner">
       <van-cell-group inset>
@@ -177,46 +177,54 @@ const onSubmit = async () => {
 </script>
 
 <style scoped>
+/* ─── Page shell ──────────────────────────────────── */
 .booking-form {
   min-height: 100vh;
-  background-color: var(--apple-bg);
   display: flex;
   flex-direction: column;
   padding-bottom: 0;
 }
+
+/* ═══ 预约摘要 — AWAI frosted card ═══ */
 .summary-card {
-  margin: 16px;
-  padding: 20px;
-  background-color: var(--apple-white);
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  margin: var(--space-4);
+  padding: var(--space-5);
+  background: var(--surface-frosted-strong);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
 }
 .summary-title {
-  font-size: 18px;
+  font-size: var(--fs-18);
   font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--apple-text);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  padding-bottom: 12px;
+  margin-bottom: var(--space-4);
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border-soft);
+  padding-bottom: var(--space-3);
+  font-family: var(--font-cjk);
 }
 .summary-item {
-  font-size: 15px;
-  color: var(--apple-text-secondary);
+  font-size: var(--fs-15);
+  color: var(--fg-2);
   line-height: 1.8;
   display: flex;
   justify-content: space-between;
 }
 
-/* ─── 定金提醒卡片样式 ─────────────────────────── */
+/* ═══ 定金提醒 — AWAI frosted card ═══ */
 .deposit-notice {
-  margin: 12px 16px;
-  padding: 16px;
-  background: linear-gradient(135deg, #fff7e6 0%, #fff3d6 100%);
-  border: 1px solid #ffe0a0;
-  border-radius: 14px;
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-frosted);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .deposit-icon {
   font-size: 28px;
@@ -227,42 +235,46 @@ const onSubmit = async () => {
   flex: 1;
 }
 .deposit-title {
-  font-size: 15px;
+  font-size: var(--fs-15);
   font-weight: 600;
-  color: #7a5800;
-  margin-bottom: 4px;
+  color: var(--pink-600);
+  margin-bottom: var(--space-1);
+  font-family: var(--font-cjk);
 }
 .deposit-amount {
-  font-size: 22px;
-  font-weight: 700;
-  color: #d48806;
-  margin-bottom: 4px;
+  font-size: var(--fs-24);
+  font-weight: 800;
+  color: var(--pink-500);
+  margin-bottom: var(--space-1);
 }
 .deposit-desc {
-  font-size: 13px;
-  color: #a67c00;
+  font-size: var(--fs-13);
+  color: var(--fg-3);
   line-height: 1.5;
 }
-/* ─────────────────────────────────────────────── */
 
+/* ─── Vant overrides ──────────────────────────────── */
 :deep(.van-cell-group--inset) {
-  margin: 16px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  margin: var(--space-4);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 :deep(.van-field__label) {
-  color: var(--apple-text);
+  color: var(--fg-1);
   font-weight: 500;
 }
+
+/* ─── Bottom action bar ───────────────────────────── */
 .bottom-action {
   position: sticky;
   bottom: 0;
   margin-top: auto;
-  padding: 16px 24px 32px 24px;
-  border-top: 1px solid rgba(0,0,0,0.05);
+  padding: var(--space-4) var(--space-6) var(--space-8) var(--space-6);
+  border-top: 1px solid var(--border-soft);
   z-index: 100;
 }
+
+/* ─── Form layout ─────────────────────────────────── */
 .booking-form-inner {
   flex: 1;
   display: flex;
