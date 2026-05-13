@@ -275,15 +275,23 @@ const goHome = () => {
 }
 
 .bottom-action {
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  margin-top: 20px;
+  left: 0;
+  right: 0;
   padding: 16px 24px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--border-soft);
+}
+@media (min-width: 768px) {
+  .bottom-action {
+    width: 390px;
+    left: auto;
+    right: 0;
+  }
 }
 
 /* ─── 动画 ────────────────────────────────────────── */
