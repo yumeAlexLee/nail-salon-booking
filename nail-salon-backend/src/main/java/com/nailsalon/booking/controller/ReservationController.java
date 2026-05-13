@@ -40,8 +40,11 @@ public class ReservationController {
     }
 
     @PostMapping("/reservations/{id}/cancel")
-    public ApiResponse<Void> userCancel(@PathVariable Long id) {
-        reservationService.userCancelReservation(id);
+    public ApiResponse<Void> userCancel(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.get("reason") : null;
+        reservationService.userCancelReservation(id, reason);
         return ApiResponse.success(null);
     }
 
@@ -113,6 +116,20 @@ public class ReservationController {
     public ApiResponse<Void> restoreReservation(@PathVariable Long id) {
         reservationService.restoreReservation(id);
         return ApiResponse.success(null);
+    }
+
+    @PostMapping("/reservations/admin/{id}/cancel")
+    public ApiResponse<Void> adminCancel(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null ? body.get("reason") : null;
+        reservationService.adminCancelReservation(id, reason);
+        return ApiResponse.success(null);
+    }
+
+    @GetMapping("/admin/week-summary")
+    public ApiResponse<Map<String, Object>> getWeekSummary() {
+        return ApiResponse.success(reservationService.getWeekSummary());
     }
 
     // ================= 定金管理 =================
