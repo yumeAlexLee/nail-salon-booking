@@ -289,8 +289,8 @@ const goHome = () => {
 @media (min-width: 768px) {
   .bottom-action {
     width: 390px;
-    left: auto;
-    right: 0;
+    left: calc(100vw - 390px);
+    right: auto;
   }
 }
 

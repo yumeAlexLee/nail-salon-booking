@@ -243,17 +243,14 @@ const goToForm = () => {
   padding: 14px 14px 8px;
 }
 .date-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   padding: 0 14px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
-.date-row::-webkit-scrollbar { display: none; }
 .date-cell {
-  flex-shrink: 0;
-  width: 54px; height: 68px;
+  width: 100%;
+  height: 68px;
   border-radius: var(--radius-md);
   background: var(--surface-frosted-strong);
   border: 1px solid var(--border-soft);
@@ -376,8 +373,8 @@ const goToForm = () => {
 @media (min-width: 768px) {
   .dt-bottom {
     width: 390px;
-    left: auto;
-    right: 0;
+    left: calc(100vw - 390px);
+    right: auto;
   }
 }
 .dt-next {
