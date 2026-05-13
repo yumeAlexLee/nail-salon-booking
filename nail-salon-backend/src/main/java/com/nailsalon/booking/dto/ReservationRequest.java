@@ -17,6 +17,7 @@ public class ReservationRequest {
     private String removalType;
     private String remarks;
     private String referenceImage;
+    private Integer totalAmount;
     @NotNull(message = "预约日期不能为空")
     private LocalDate reserveDate;
     @NotBlank(message = "预约时间段不能为空")

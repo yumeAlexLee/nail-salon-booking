@@ -1,6 +1,7 @@
 package com.nailsalon.booking.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -30,4 +31,10 @@ public class Reservation {
     private Integer depositAmount;
     private String depositStatus;
     private LocalDateTime depositPaidAt;
+
+    @TableField("total_amount")
+    private Integer totalAmount;
+
+    @TableField("cancel_reason")
+    private String cancelReason;
 }
