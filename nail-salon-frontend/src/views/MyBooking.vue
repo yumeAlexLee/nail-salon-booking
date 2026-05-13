@@ -285,17 +285,21 @@ const doReschedule = async () => {
 }
 .ac-soft { background:var(--pink-50); color:var(--pink-600); border-color:var(--pink-200); }
 .ac-danger { background:#fff; color:var(--accent-red); }
-.ac-btn:active { transform:scale(0.95); }
+.my-booking {
+  min-height: 100vh;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Bottom CTA */
+/* Bottom CTA - in flow, pushed to bottom */
 .mb-bottom {
-  position:fixed; bottom:0; left:0; right:0;
-  padding:12px 14px 24px;
+  margin-top: auto;
+  padding: 12px 14px 24px;
   background: var(--surface-frosted-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid var(--border-soft);
-  z-index:100;
 }
 .mb-start {
   width:100%; padding:14px;
@@ -307,7 +311,6 @@ const doReschedule = async () => {
   box-shadow:0 4px 16px rgba(232,67,110,0.35);
 }
 .mb-start:active { transform:scale(0.97); }
-@media (min-width:768px) { .mb-bottom { width:390px; right:0; left:auto; } }
 
 /* Slot options */
 .slot-opt { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border-soft); cursor:pointer; font-family:var(--font-cjk); }
