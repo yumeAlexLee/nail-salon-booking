@@ -292,14 +292,10 @@ const doReschedule = async () => {
   flex-direction: column;
 }
 
-/* Bottom CTA - in flow, pushed to bottom */
+/* Bottom CTA - just the button, no background bar */
 .mb-bottom {
   margin-top: auto;
   padding: 12px 14px 24px;
-  background: var(--surface-frosted-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border-soft);
 }
 .mb-start {
   width:100%; padding:14px;

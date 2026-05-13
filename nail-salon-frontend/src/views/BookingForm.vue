@@ -320,11 +320,6 @@ const onSubmit = async () => {
   position: fixed;
   bottom: 0; left: 0; right: 0;
   padding: 12px 14px 24px;
-  background: var(--surface-frosted-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border-soft);
-  z-index: 100;
 }
 .bf-submit {
   width: 100%;

@@ -364,11 +364,6 @@ const goToForm = () => {
   left: 0;
   right: 0;
   padding: 12px 14px 24px;
-  background: var(--surface-frosted-strong);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid var(--border-soft);
-  z-index: 100;
 }
 @media (min-width: 768px) {
   .dt-bottom {
