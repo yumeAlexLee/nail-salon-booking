@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=ZCOOL+KuaiLe&display=swap');
+
+:root {
+  /* Apple x Sanrio High-end Collab Typography & Colors */
+  --apple-bg: #fffafb; /* 极浅的暖白粉 */
+  --apple-text: #2d2628; /* 深灰棕色，不刺眼的黑 */
+  --apple-text-secondary: #8a8083; /* 灰粉色 */
+  --apple-blue: #ff6b8b; /* 主题粉色 */
+  --apple-black: #ff6b8b; /* 所有的黑全部转为哑光玫瑰粉 */
+  --apple-white: #ffffff;
+  
+  /* Vant Global Overrides */
+  --van-primary-color: var(--apple-black);
+  --van-text-color: var(--apple-text);
+  --van-background-2: var(--apple-white);
+  --van-border-radius-md: 14px;
+  --van-border-radius-lg: 20px;
+  --van-border-radius-max: 999px;
+  --van-button-primary-background: var(--apple-black);
+  --van-button-primary-border-color: var(--apple-black);
+  --van-button-border-radius: 16px;
+  --van-cell-background: var(--apple-white);
+  --van-nav-bar-background: rgba(255, 255, 255, 0.7);
+  --van-nav-bar-icon-color: var(--apple-text);
+  --van-nav-bar-text-color: var(--apple-text);
+  --van-nav-bar-title-text-color: var(--apple-text);
+  --van-nav-bar-title-font-size: 17px;
+  --van-radio-checked-icon-color: var(--apple-black);
+  --van-calendar-selected-day-background: var(--apple-black);
+  --van-toast-background: rgba(0, 0, 0, 0.8);
+  --van-toast-border-radius: 14px;
+}
+
+body, html, #app {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", "Roboto", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 消除所有 NavBar 的底边线，配合毛玻璃 */
+.van-hairline--bottom::after {
+  border-bottom-width: 0 !important;
+}
+
+/* 毛玻璃工具类 */
+.glass-effect {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* ─── 统一背景图支持 ──────────────────────────────
+   各页面容器去掉实色背景，让 App.vue 的背景图透出
+   背景图文件放 public/bg.jpg
+   如需关闭，注释 App.vue 的 background 行即可
+   ──────────────────────────────────────────────── */
+.home, .booking-form, .menu-selection, .success-result,
+.date-time-select, .guide-page, .portfolio-page {
+  background-color: transparent !important;
+}
+
+/* 苹果风按压阻尼动画 */
+.apple-btn-active:active {
+  transform: scale(0.96);
+  opacity: 0.8;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.apple-transition {
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
