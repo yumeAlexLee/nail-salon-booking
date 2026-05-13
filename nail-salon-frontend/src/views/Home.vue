@@ -2,7 +2,7 @@
   <div class="home">
     <!-- ═══ Header: AWAI Wordmark ═══ -->
     <div style="text-align:center; padding: 32px 20px 10px;">
-      <div class="awai-eyebrow">淡い · ah-wai · nail studio</div>
+      <div class="awai-eyebrow">淡い · awai · nail studio</div>
       <div style="margin-top: 8px;">
         <span class="awai-wordmark">AWAI NAIL</span>
       </div>
@@ -26,6 +26,9 @@
         <div style="position:relative;margin-bottom:8px;">
           <i data-lucide="at-sign" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--pink-600);stroke-width:1.8;z-index:1;"></i>
           <input v-model="contactId" placeholder="小红书 / WeChat / LINE 任一 ID" class="awai-field" style="padding-left:38px;" />
+        </div>
+        <div style="font-family:var(--font-body);font-size:11.5px;color:var(--ink-500);margin-bottom:14px;">
+          微信 / 手机号
         </div>
 
         <van-button type="primary" block round size="large" :loading="checking" @click="identifyUser" class="apple-btn-active" style="height:50px;font-weight:700;font-size:15.5px;">
