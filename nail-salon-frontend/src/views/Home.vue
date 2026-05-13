@@ -62,39 +62,40 @@
         </button>
       </div>
 
-      <!-- 4 Tile Grid -->
+      <!-- 4 Tile Grid (v2) -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <!-- 作品集 -->
-        <div class="awai-tile" @click="showPortfolio" style="background:linear-gradient(135deg,var(--pink-50),var(--pink-100));">
-          <div class="awai-tile-icon" style="color:var(--pink-500);">
-            <van-icon name="photo-o" size="24" />
+        <div class="awai-tile" @click="showPortfolio">
+          <div class="awai-tile-icon" style="background:var(--pink-50);border:1px solid var(--pink-100);">
+            <van-icon name="flower-o" size="22" color="var(--pink-500)" />
           </div>
           <div class="awai-tile-label">作品集</div>
           <div class="awai-tile-sub">浏览参考</div>
         </div>
 
-        <!-- 开始预约 (slightly emphasized) -->
-        <div class="awai-tile" @click="startBooking" style="background:var(--ink-900);color:#fff;">
-          <div class="awai-tile-icon" style="color:#fff;">
-            <van-icon name="calendar-o" size="24" />
+        <!-- 开始预约 (pink gradient, featured) -->
+        <div class="awai-tile awai-tile-primary" @click="startBooking">
+          <div class="awai-tile-accent-circle"></div>
+          <div class="awai-tile-icon" style="background:rgba(255,255,255,0.22);">
+            <van-icon name="calendar-o" size="22" color="#fff" />
           </div>
           <div class="awai-tile-label" style="color:#fff;">开始预约</div>
-          <div class="awai-tile-sub" style="color:rgba(255,255,255,0.6);">挑款式 + 时间</div>
+          <div class="awai-tile-sub" style="color:rgba(255,255,255,0.88);">挑款式 + 时间</div>
         </div>
 
         <!-- 我的预约 -->
-        <div class="awai-tile" @click="goToMyBookings" style="background:linear-gradient(135deg,var(--pink-50),var(--pink-100));">
-          <div class="awai-tile-icon" style="color:var(--pink-500);">
-            <van-icon name="todo-list-o" size="24" />
+        <div class="awai-tile" @click="goToMyBookings">
+          <div class="awai-tile-icon" style="background:var(--pink-50);border:1px solid var(--pink-100);">
+            <van-icon name="records" size="22" color="var(--pink-500)" />
           </div>
           <div class="awai-tile-label">我的预约</div>
           <div class="awai-tile-sub">查看与取消</div>
         </div>
 
         <!-- 来店指引 -->
-        <div class="awai-tile" @click="showGuidePreview" style="background:linear-gradient(135deg,var(--pink-50),var(--pink-100));">
-          <div class="awai-tile-icon" style="color:var(--pink-500);">
-            <van-icon name="location-o" size="24" />
+        <div class="awai-tile" @click="showGuidePreview">
+          <div class="awai-tile-icon" style="background:var(--pink-50);border:1px solid var(--pink-100);">
+            <van-icon name="location-o" size="22" color="var(--pink-500)" />
           </div>
           <div class="awai-tile-label">来店指引</div>
           <div class="awai-tile-sub">千葉県船橋市</div>
@@ -197,6 +198,7 @@ const resetUser = () => {
   transition: all var(--dur-base) var(--ease-soft);
   box-shadow: var(--shadow-1);
   border: 1px solid var(--border-soft);
+  background: rgba(255,255,255,0.9);
 }
 .awai-tile:active {
   transform: scale(0.97);
@@ -223,5 +225,23 @@ const resetUser = () => {
   font-family: var(--font-cjk);
   font-size: 11px;
   color: var(--ink-500);
+}
+
+/* ─── Primary tile: pink gradient + accent circle ─── */
+.awai-tile-primary {
+  background: linear-gradient(135deg, var(--pink-400) 0%, var(--pink-500) 55%, var(--pink-600) 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.awai-tile-accent-circle {
+  position: absolute;
+  top: -18px;
+  right: -18px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
 }
 </style>
