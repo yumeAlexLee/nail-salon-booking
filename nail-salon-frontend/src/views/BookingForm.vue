@@ -187,11 +187,13 @@ const onSubmit = async () => {
 .booking-form {
   min-height: 100vh;
   background: transparent;
-  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ─── Nav ─── */
 .bf-nav {
+  flex-shrink: 0;
   position: sticky; top: 0; z-index: 20;
   backdrop-filter: blur(18px) saturate(180%);
   -webkit-backdrop-filter: blur(18px) saturate(180%);
@@ -289,6 +291,7 @@ const onSubmit = async () => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1;
 }
 .field-group {
   display: flex;
@@ -317,8 +320,7 @@ const onSubmit = async () => {
 
 /* ─── Bottom ─── */
 .bf-bottom {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  margin-top: auto;
   padding: 12px 14px 24px;
 }
 .bf-submit {
@@ -337,12 +339,4 @@ const onSubmit = async () => {
 }
 .bf-submit:active { transform: scale(0.97); }
 .bf-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-@media (min-width: 768px) {
-  .bf-bottom {
-    width: 390px;
-    right: 0;
-    left: auto;
-  }
-}
 </style>

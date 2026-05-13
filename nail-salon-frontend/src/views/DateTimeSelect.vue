@@ -178,11 +178,13 @@ const goToForm = () => {
 .date-time-select {
   min-height: 100vh;
   background: transparent;
-  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ─── Nav ─── */
 .dt-nav {
+  flex-shrink: 0;
   position: sticky; top: 0; z-index: 20;
   backdrop-filter: blur(18px) saturate(180%);
   -webkit-backdrop-filter: blur(18px) saturate(180%);
@@ -311,6 +313,7 @@ const goToForm = () => {
 .slot-section {
   padding: 0 14px;
   margin-top: 16px;
+  flex: 1;
 }
 .slot-label {
   font-family: var(--font-cjk); font-weight: 700;
@@ -359,18 +362,8 @@ const goToForm = () => {
 
 /* ─── Bottom bar ─── */
 .dt-bottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  margin-top: auto;
   padding: 12px 14px 24px;
-}
-@media (min-width: 768px) {
-  .dt-bottom {
-    width: 390px;
-    right: 0;
-    left: auto;
-  }
 }
 .dt-next {
   width: 100%;
