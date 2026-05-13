@@ -115,14 +115,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { showToast } from 'vant';
 import { getCustomerStatus } from '../api';
-import i18n from '../i18n';
 
 const router = useRouter();
+const { locale } = useI18n();
 
-const currentLang = ref(i18n.global.locale);
-
+const currentLang = ref(locale.value);
 const userName = ref('');
 const contactId = ref('');
 const checking = ref(false);
@@ -173,10 +173,13 @@ const startBooking = () => router.push('/menu');
 const showGuidePreview = () => router.push('/guide');
 const showPortfolio = () => router.push('/portfolio');
 const goToMyBookings = () => router.push('/my-bookings');
+
 const toggleLang = () => {
-  currentLang.value = currentLang.value === 'zh' ? 'ja' : 'zh';
-  i18n.global.locale = currentLang.value;
+  const next = currentLang.value === 'zh' ? 'ja' : 'zh';
+  currentLang.value = next;
+  locale.value = next;
 };
+
 const resetUser = () => {
   identified.value = false;
   userName.value = '';
