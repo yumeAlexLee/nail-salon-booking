@@ -24,21 +24,21 @@
     <!-- ═══ 日期行 ═══ -->
     <div class="date-row-label">选择日期</div>
     <div class="date-row">
-      <button
-        v-for="d in dateList"
-        :key="d.iso"
-        :class="['date-cell', {
-          'date-active': selectedDate === d.iso,
-          'date-closed': d.closed,
-          'date-today': d.isToday,
-        }]"
-        @click="selectDate(d)"
-      >
-        <span class="date-wday">{{ d.weekday }}</span>
-        <span class="date-num">{{ d.day }}</span>
-        <span v-if="d.closed" class="date-rest">休</span>
-        <span v-if="d.isToday && !d.closed" class="date-dot"></span>
-      </button>
+      <template v-for="(d, idx) in dateList" :key="idx">
+        <button
+          v-if="!d.empty"
+          :class="['date-cell', {
+            'date-active': selectedDate === d.iso,
+            'date-today': d.isToday,
+          }]"
+          @click="selectDate(d)"
+        >
+          <span class="date-wday">{{ d.weekday }}</span>
+          <span class="date-num">{{ d.day }}</span>
+          <span v-if="d.isToday" class="date-dot"></span>
+        </button>
+        <div v-else class="date-empty"></div>
+      </template>
     </div>
 
     <!-- ═══ 时段 ═══ -->
@@ -108,22 +108,32 @@ const weekdayJP = ['日', '月', '火', '水', '木', '金', '土'];
 const today = new Date();
 
 const dateList = computed(() => {
-  const list = [];
+  // 从今天开始连续14天，按周一起始排列
+  const cells = [];
+  const offset = today.getDay(); // 0=日, 1=月, ...
+  // 周一 = 1, 周日在第1列需要特殊处理
+  const colStart = offset === 0 ? 7 : offset; // 0(日)→7, 1(月)→1, ..., 6(土)→6
+  
+  // 前补空位（周一前的格子留空）
+  for (let i = 1; i < colStart; i++) {
+    cells.push({ empty: true });
+  }
+  
+  // 14天
   for (let i = 0; i < 14; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
     const iso = d.toISOString().slice(0, 10);
     const day = d.getDay();
-    const isMonday = day === 1;
-    list.push({
+    cells.push({
       iso,
       day: d.getDate(),
       weekday: weekdayJP[day],
       isToday: i === 0,
-      closed: isMonday, // 定休日：周一
+      past: i < 0, // 没有过去的日期
     });
   }
-  return list;
+  return cells;
 });
 
 const selectedDate = ref('');
@@ -133,7 +143,6 @@ const slots = ref([]);
 const loading = ref(false);
 
 const selectDate = async (d) => {
-  if (d.closed) return;
   selectedDate.value = d.iso;
   selectedSlot.value = '';
   
@@ -280,21 +289,12 @@ const goToForm = () => {
   border-radius: 50%;
   background: var(--pink-500);
 }
-/* closed */
-.date-closed {
-  background: #f0eeec !important;
-  border-color: #e0ddda !important;
-  cursor: default;
-}
-.date-closed .date-wday,
-.date-closed .date-num {
-  color: #bbb !important;
-}
-.date-rest {
-  font-family: var(--font-cjk);
-  font-size: 10px; font-weight: 700;
-  color: var(--ink-400);
-  margin-top: -1px;
+/* empty placeholder */
+.date-empty {
+  width: 100%;
+  height: 68px;
+  border-radius: var(--radius-md);
+  visibility: hidden;
 }
 /* selected */
 .date-active {
