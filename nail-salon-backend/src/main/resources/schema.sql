@@ -79,15 +79,10 @@ INSERT IGNORE INTO menu_item (category, category_ja, name, name_ja, price, durat
 -- 唯一约束（已手动添加，防止 schema 重复插入）
 -- 若需重新添加：ALTER TABLE menu_item ADD UNIQUE INDEX uk_menu_name_category (name, category);
 
--- ─── 定金功能（已有数据库升级列）──────────────────
--- deposit_amount / deposit_status / deposit_paid_at 已在 reservation 表定义中包含。
-ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_amount INT DEFAULT 500 COMMENT '定金金额（日元）';
-ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_status VARCHAR(20) DEFAULT 'NONE' COMMENT 'NONE/CUSTOMER_PAID/PAID/REFUNDED/FORFEITED';
-ALTER TABLE reservation ADD COLUMN IF NOT EXISTS deposit_paid_at TIMESTAMP NULL COMMENT '定金支付时间';
-
--- ─── AWAI 新增字段 ────────────────────────────────
-ALTER TABLE reservation ADD COLUMN IF NOT EXISTS total_amount INT DEFAULT 0 COMMENT '服务总价(日元)';
-ALTER TABLE reservation ADD COLUMN IF NOT EXISTS cancel_reason VARCHAR(255) COMMENT '取消原因';
+-- ─── 新字段：已在数据库手动添加 total_amount / cancel_reason ──
+-- 如需在新数据库中使用，执行：
+-- ALTER TABLE reservation ADD COLUMN total_amount INT DEFAULT 0 COMMENT '服务总价(日元)';
+-- ALTER TABLE reservation ADD COLUMN cancel_reason VARCHAR(255) COMMENT '取消原因';
 
 -- 默认定金金额设置
 INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('deposit_amount', '500');
