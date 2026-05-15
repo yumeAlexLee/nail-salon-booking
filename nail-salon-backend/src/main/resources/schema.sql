@@ -91,6 +91,25 @@ INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('deposit_
 INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('time_slot_duration', '90');
 INSERT IGNORE INTO store_settings (setting_key, setting_value) VALUES ('closed_days', 'MONDAY');
 
+-- ─── 菜单子选项表（贴钻、珍珠等加购项）─────────────────────
+CREATE TABLE IF NOT EXISTS menu_option (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    menu_item_id BIGINT NOT NULL COMMENT '关联主菜单项目ID',
+    name VARCHAR(100) NOT NULL COMMENT '选项名称',
+    name_ja VARCHAR(100) COMMENT '日文名称',
+    price INT NOT NULL COMMENT '额外加收金额(日元)',
+    duration INT NOT NULL COMMENT '额外增加时长(分钟)',
+    sort_order INT DEFAULT 0 COMMENT '排序',
+    is_active INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_menu_item_id (menu_item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单子选项表';
+
+-- reservation 新增字段：关联菜单项目和选择的子选项
+-- 已手动添加，MySQL 不支持 ADD COLUMN IF NOT EXISTS
+-- ALTER TABLE reservation ADD COLUMN menu_item_id BIGINT COMMENT '关联的主菜单项目ID';
+-- ALTER TABLE reservation ADD COLUMN selected_options TEXT COMMENT 'JSON: 选择的子选项ID列表';
+
 -- ─── 作品集图片表 ─────────────────────────────────
 CREATE TABLE IF NOT EXISTS portfolio_image (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

@@ -15,9 +15,15 @@
         <span class="summary-label">{{ selectedService.name }}</span>
         <span class="summary-price">¥{{ isNew ? Math.round(selectedService.price * 0.8).toLocaleString() : selectedService.price.toLocaleString() }}</span>
       </div>
+      <div class="summary-sub-list" v-if="selectedOptions.length > 0">
+        <div class="summary-sub-item" v-for="opt in selectedOptions" :key="opt.id">
+          <span class="summary-sub-name">+ {{ opt.name }}</span>
+          <span class="summary-sub-price">+¥{{ opt.price.toLocaleString() }}</span>
+        </div>
+      </div>
       <div class="summary-row">
         <span class="summary-label">{{ reserveDate }} {{ timeSlot }}</span>
-        <span class="summary-meta" v-if="selectedService">约 {{ selectedService.duration }} 分</span>
+        <span class="summary-meta" v-if="selectedService">约 {{ totalDuration }} 分</span>
       </div>
     </div>
 
@@ -52,7 +58,7 @@
             :key="opt.value"
             :class="['awai-chip', { selected: form.removalType === opt.value }]"
             @click="form.removalType = opt.value"
-          >{{ opt.label }}</button>
+          >{{ opt.label }}<span v-if="opt.price > 0" class="chip-price"> +¥{{ opt.price.toLocaleString() }}</span></button>
         </div>
       </div>
 
@@ -95,22 +101,41 @@ const router = useRouter();
 
 const selectedService = JSON.parse(sessionStorage.getItem('selectedService') || 'null');
 const isNew = sessionStorage.getItem('customerType') === 'NEW';
+const selectedOptions = JSON.parse(sessionStorage.getItem('selectedOptions') || '[]');
+const selectedOptionIds = JSON.parse(sessionStorage.getItem('selectedOptionIds') || '[]');
 const reserveDate = ref('');
 const timeSlot = ref('');
 const loading = ref(false);
 
-// 定金：30% 或 动态计算
+// 总时长（主服务 + 子选项）
+const totalDuration = computed(() => {
+  if (!selectedService) return 0;
+  const base = selectedService.duration || 0;
+  const extra = selectedOptions.reduce((sum, o) => sum + (o.duration || 0), 0);
+  return Math.max(120, base + extra);
+});
+
+// 总金额
+const totalPrice = computed(() => {
+  let price = selectedService ? (isNew ? Math.round(selectedService.price * 0.8) : selectedService.price) : 0;
+  price += selectedOptions.reduce((sum, o) => sum + (o.price || 0), 0);
+  // 加上卸甲费用
+  const removal = removalOptions.find(r => r.value === form.value.removalType);
+  if (removal) price += removal.price;
+  return price;
+});
+
+// 定金：30%
 const depositAmount = computed(() => {
   if (!selectedService) return 500;
-  const price = isNew ? Math.round(selectedService.price * 0.8) : selectedService.price;
-  return Math.ceil(price * 0.3);
+  return Math.ceil(totalPrice.value * 0.3);
 });
 
 const removalOptions = [
-  { value: '本店续做', label: '本店续做（免费）' },
-  { value: '他店来·本甲', label: '他店来·本甲' },
-  { value: '他店来·甲片', label: '他店来·甲片' },
-  { value: '无', label: '不需要卸甲' },
+  { value: '本店续做', label: '本店续做（免费）', price: 0 },
+  { value: '他店来·本甲', label: '他店来·本甲', price: 600 },
+  { value: '他店来·甲片', label: '他店来·甲片', price: 1000 },
+  { value: '无', label: '不需要卸甲', price: 0 },
 ];
 
 const form = ref({
@@ -164,7 +189,10 @@ const onSubmit = async () => {
       customerType: isNew ? 'NEW' : 'OLD',
       reserveDate: reserveDate.value,
       timeSlot: timeSlot.value,
-      totalAmount: depositAmount.value * 3, // deposit is 30%, so total = deposit * 3
+      menuItemId: selectedService?.id,
+      optionIds: selectedOptionIds.length > 0 ? selectedOptionIds : null,
+      totalAmount: totalPrice.value,
+      totalDuration: totalDuration.value,
     };
     const res = await submitReservation(data);
     if (res.code === 200) {
@@ -255,6 +283,29 @@ const onSubmit = async () => {
   font-size: 12px;
   color: var(--ink-500);
 }
+.summary-sub-list {
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.summary-sub-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 10px;
+}
+.summary-sub-name {
+  font-family: var(--font-cjk);
+  font-size: 12px;
+  color: var(--ink-600);
+}
+.summary-sub-price {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pink-600);
+}
 
 /* ─── Deposit ─── */
 .deposit-box {
@@ -316,6 +367,11 @@ const onSubmit = async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.chip-price {
+  font-weight: 600;
+  color: var(--pink-600);
+  margin-left: 2px;
 }
 
 /* ─── Bottom ─── */

@@ -34,37 +34,84 @@
       </div>
 
       <!-- ═══ 服务列表 ═══ -->
-      <div class="menu-items">
-        <div
-          v-for="item in currentItems"
-          :key="item.id"
-          class="menu-item-card"
-          @click="goToBooking(item)"
-        >
-          <!-- 缩略图 -->
-          <div class="item-thumb">
-            <img :src="item.imageUrl || '/' + thumbFallback(item)" class="item-img" />
-          </div>
+  <div class="menu-items">
+    <div
+      v-for="item in currentItems"
+      :key="item.id"
+      class="menu-item-card"
+      @click="openOptions(item)"
+    >
+      <!-- 缩略图 -->
+      <div class="item-thumb">
+        <img :src="item.imageUrl || '/' + thumbFallback(item)" class="item-img" />
+      </div>
 
-          <!-- 信息区 -->
-          <div class="item-info">
-            <div class="item-name">{{ item.name }}</div>
-            <div class="item-tag-row">
-              <span v-if="item.nameJa" class="item-tag">{{ item.nameJa }}</span>
-              <span v-if="isNewCustomer" class="item-tag item-tag-sale">新客 8 折</span>
+      <!-- 信息区 -->
+      <div class="item-info">
+        <div class="item-name">{{ item.name }}</div>
+        <div class="item-tag-row">
+          <span v-if="item.nameJa" class="item-tag">{{ item.nameJa }}</span>
+          <span v-if="isNewCustomer" class="item-tag item-tag-sale">新客 8 折</span>
+        </div>
+        <div class="item-duration">约 {{ item.duration }} 分钟</div>
+      </div>
+
+      <!-- 价格区 -->
+      <div class="item-price-col">
+        <div v-if="isNewCustomer" class="item-original">¥{{ item.price.toLocaleString() }}</div>
+        <div class="item-price">
+          ¥{{ isNewCustomer ? Math.round(item.price * 0.8).toLocaleString() : item.price.toLocaleString() }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 子选项弹出面板 ═══ -->
+  <teleport to="#mobile-container">
+    <div v-if="showOptions" class="option-overlay" @click.self="showOptions = false">
+      <div class="option-sheet" v-if="currentMenuItem">
+        <!-- 主服务信息 -->
+        <div class="option-header">
+          <div class="option-title">{{ currentMenuItem.name }}</div>
+          <div class="option-sub">约 {{ currentMenuItem.duration }} 分钟 · ¥{{ displayPrice(currentMenuItem.price) }}</div>
+          <button class="option-close" @click="showOptions = false">✕</button>
+        </div>
+
+        <!-- 子选项列表 -->
+        <div v-if="options.length > 0" class="option-list">
+          <div
+            v-for="opt in options"
+            :key="opt.id"
+            :class="['option-item', { 'option-selected': selectedOptionIds.includes(opt.id) }]"
+            @click="toggleOption(opt)"
+          >
+            <div class="option-info">
+              <div class="option-name">{{ opt.name }}</div>
+              <div class="option-name-ja" v-if="opt.nameJa">{{ opt.nameJa }}</div>
             </div>
-            <div class="item-duration">约 {{ item.duration }} 分钟</div>
-          </div>
-
-          <!-- 价格区 -->
-          <div class="item-price-col">
-            <div v-if="isNewCustomer" class="item-original">¥{{ item.price.toLocaleString() }}</div>
-            <div class="item-price">
-              ¥{{ isNewCustomer ? Math.round(item.price * 0.8).toLocaleString() : item.price.toLocaleString() }}
+            <div class="option-meta">
+              <span class="option-duration" v-if="opt.duration">+{{ opt.duration }}分</span>
+              <span class="option-price">+¥{{ opt.price.toLocaleString() }}</span>
+            </div>
+            <div class="option-check">
+              <van-icon :name="selectedOptionIds.includes(opt.id) ? 'checked-circle' : 'circle'" :color="selectedOptionIds.includes(opt.id) ? 'var(--pink-500)' : '#ccc'" size="20" />
             </div>
           </div>
         </div>
+        <div v-else class="option-empty">该服务暂无附加选项</div>
+
+        <!-- 底部按钮 -->
+        <div class="option-footer">
+          <div class="option-total" v-if="selectedOptions.length > 0">
+            已选 {{ selectedOptions.length }} 项 · 附加 {{ selectedExtraDuration }} 分 · +¥{{ selectedExtraPrice.toLocaleString() }}
+          </div>
+          <button class="option-confirm" @click="confirmOptions">
+            确定
+          </button>
+        </div>
       </div>
+    </div>
+  </teleport>
 
       <!-- ═══ 服务说明 ═══ -->
       <div class="menu-footer">
@@ -79,7 +126,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getActiveMenu } from '../api';
+import { getActiveMenu, getMenuOptions } from '../api';
 
 const router = useRouter();
 const isNewCustomer = sessionStorage.getItem('customerType') === 'NEW';
@@ -88,14 +135,84 @@ const loading = ref(true);
 const activeTab = ref('');
 
 const goBack = () => router.back();
+
+// ─── 子选项面板 ───
+const showOptions = ref(false);
+const currentMenuItem = ref(null);
+const options = ref([]);
+const selectedOptionIds = ref([]);
+
+const selectedOptions = computed(() =>
+  options.value.filter(o => selectedOptionIds.value.includes(o.id))
+);
+
+const selectedExtraDuration = computed(() =>
+  selectedOptions.value.reduce((sum, o) => sum + (o.duration || 0), 0)
+);
+
+const selectedExtraPrice = computed(() =>
+  selectedOptions.value.reduce((sum, o) => sum + (o.price || 0), 0)
+);
+
+const displayPrice = (price) => {
+  const p = isNewCustomer ? Math.round(price * 0.8) : price;
+  return p.toLocaleString();
+};
+
+const openOptions = async (item) => {
+  currentMenuItem.value = item;
+  selectedOptionIds.value = [];
+  
+  try {
+    const res = await getMenuOptions(item.id);
+    if (res.code === 200) {
+      options.value = res.data || [];
+    }
+  } catch (e) {
+    console.error('获取子选项失败', e);
+    options.value = [];
+  }
+  
+  showOptions.value = true;
+};
+
+const toggleOption = (opt) => {
+  const idx = selectedOptionIds.value.indexOf(opt.id);
+  if (idx >= 0) {
+    selectedOptionIds.value.splice(idx, 1);
+  } else {
+    selectedOptionIds.value.push(opt.id);
+  }
+};
+
+const confirmOptions = () => {
+  const item = currentMenuItem.value;
+  if (!item) return;
+  
+  // 存储主服务 + 子选项到 sessionStorage
+  sessionStorage.setItem('selectedService', JSON.stringify(item));
+  sessionStorage.setItem('selectedOptionIds', JSON.stringify(selectedOptionIds.value));
+  sessionStorage.setItem('selectedOptions', JSON.stringify(selectedOptions.value));
+  
+  showOptions.value = false;
+  router.push('/book');
+};
+
+// 直接去选时间（从底栏链接等入口用）
 const goToBooking = (item) => {
-  if (item) sessionStorage.setItem('selectedService', JSON.stringify(item));
+  if (item) {
+    sessionStorage.setItem('selectedService', JSON.stringify(item));
+    sessionStorage.setItem('selectedOptionIds', '[]');
+    sessionStorage.setItem('selectedOptions', '[]');
+  }
   router.push('/book');
 };
 
 // 从 API 返回的 key 中提取中文分类名（格式："本甲|自爪ジェル"）
 const categoryList = computed(() => {
-  return Object.keys(menuData.value).map(k => k.split('|')[0]);
+  return Object.keys(menuData.value)
+    .map(k => k.split('|')[0])
+    .filter(cat => cat !== '卸甲');
 });
 
 // 当前 Tab 选中的项目
@@ -356,4 +473,152 @@ onMounted(async () => {
   color: var(--ink-700);
   line-height: 1.4;
 }
+
+/* ═══ Sub-options Sheet ═══ */
+.option-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.option-sheet {
+  padding: 20px 16px 24px;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  max-height: 70vh;
+}
+.option-header {
+  position: relative;
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 12px;
+}
+.option-close {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--surface-frosted-strong);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--ink-500);
+}
+.option-title {
+  font-family: var(--font-cjk);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--ink-900);
+}
+.option-sub {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-500);
+  margin-top: 4px;
+}
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(70vh - 200px);
+  overflow-y: auto;
+}
+.option-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-card);
+  gap: 10px;
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease-soft);
+}
+.option-item:active {
+  transform: scale(0.98);
+}
+.option-selected {
+  border-color: var(--pink-400);
+  background: #fef1f5;
+}
+.option-info {
+  flex: 1;
+  min-width: 0;
+}
+.option-name {
+  font-family: var(--font-cjk);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.option-name-ja {
+  font-family: var(--font-cjk);
+  font-size: 11px;
+  color: var(--ink-500);
+  margin-top: 1px;
+}
+.option-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.option-duration {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--ink-400);
+}
+.option-price {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--pink-600);
+}
+.option-check {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.option-empty {
+  text-align: center;
+  padding: 30px 0;
+  font-family: var(--font-cjk);
+  font-size: 14px;
+  color: var(--ink-400);
+}
+.option-footer {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.option-total {
+  text-align: center;
+  font-family: var(--font-cjk);
+  font-size: 12px;
+  color: var(--ink-500);
+}
+.option-confirm {
+  width: 100%;
+  padding: 14px;
+  border-radius: 999px;
+  border: 0;
+  background: linear-gradient(135deg, #ff6b9d 0%, #e8436e 100%);
+  color: #fff;
+  font-family: var(--font-cjk);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(232,67,110,0.35);
+}
+.option-confirm:active { transform: scale(0.97); }
 </style>

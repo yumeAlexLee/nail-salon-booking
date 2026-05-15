@@ -3,8 +3,12 @@ package com.nailsalon.booking.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.nailsalon.booking.dto.ReservationRequest;
 import com.nailsalon.booking.entity.LockedSlot;
+import com.nailsalon.booking.entity.MenuItem;
+import com.nailsalon.booking.entity.MenuItemOption;
 import com.nailsalon.booking.entity.Reservation;
 import com.nailsalon.booking.mapper.LockedSlotMapper;
+import com.nailsalon.booking.mapper.MenuItemMapper;
+import com.nailsalon.booking.mapper.MenuItemOptionMapper;
 import com.nailsalon.booking.mapper.ReservationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,42 +31,66 @@ public class ReservationService {
     private final LockedSlotMapper lockedSlotMapper;
     private final StoreSettingsService storeSettingsService;
     private final NotifyService notifyService;
+    private final MenuItemMapper menuItemMapper;
+    private final MenuItemOptionMapper menuItemOptionMapper;
 
+    /** 最低时长：2小时（120分钟） */
+    private static final int MIN_SLOT_DURATION = 120;
+
+    /** AWAI 标准时间点（6个起始时间，90分钟间隔） */
     private static final List<String> AWAI_SLOTS = Arrays.asList(
             "11:00", "12:30", "14:00", "15:30", "17:00", "18:30"
     );
 
-    /** AWAI 标准时间点（6个槽，90分钟间隔） */
     public List<String> getAwaiSlots() {
         return AWAI_SLOTS;
     }
 
-    public List<String> getAllSlots() {
-        Map<String, String> settings = storeSettingsService.getAllSettings();
-        String openTimeStr = settings.getOrDefault("open_time", "10:00");
-        String closeTimeStr = settings.getOrDefault("close_time", "20:00");
-
-        LocalTime openTime = LocalTime.parse(openTimeStr);
-        LocalTime closeTime = LocalTime.parse(closeTimeStr);
-
-        List<String> slots = new ArrayList<>();
-        LocalTime current = openTime;
-        while (current.plusHours(2).isBefore(closeTime) || current.plusHours(2).equals(closeTime)) {
-            slots.add(current.toString() + "-" + current.plusHours(2).toString());
-            current = current.plusHours(2);
+    /**
+     * 计算有效时长（分钟）
+     * max(最低2小时, 主菜单时长 + 子选项总时长)
+     */
+    public int calculateEffectiveDuration(Long menuItemId, List<Long> optionIds) {
+        int baseDuration = 0;
+        if (menuItemId != null) {
+            MenuItem item = menuItemMapper.selectById(menuItemId);
+            if (item != null && item.getDuration() != null) {
+                baseDuration = item.getDuration();
+            }
         }
-        return slots;
+        int optionDuration = 0;
+        if (optionIds != null && !optionIds.isEmpty()) {
+            optionDuration = menuItemOptionMapper.selectList(
+                    new LambdaQueryWrapper<MenuItemOption>().in(MenuItemOption::getId, optionIds)
+            ).stream().filter(o -> o.getDuration() != null).mapToInt(MenuItemOption::getDuration).sum();
+        }
+        return Math.max(MIN_SLOT_DURATION, baseDuration + optionDuration);
     }
 
-    public List<Map<String, Object>> getAvailability(LocalDate date) {
-        // 获取当天已被预约的时间段（排除已取消的记录）
+    /**
+     * 获取营业时间设定
+     */
+    private LocalTime getOpenTime() {
+        String val = storeSettingsService.getAllSettings().getOrDefault("open_time", "10:00");
+        return LocalTime.parse(val);
+    }
+
+    private LocalTime getCloseTime() {
+        String val = storeSettingsService.getAllSettings().getOrDefault("close_time", "20:00");
+        return LocalTime.parse(val);
+    }
+
+    /**
+     * 获取可用时段（动态：根据菜单时长计算）
+     * 无 menuItemId 时向后兼容返回 2小时固定块
+     */
+    public List<Map<String, Object>> getAvailability(LocalDate date, Long menuItemId, List<Long> optionIds) {
         List<String> bookedSlots = reservationMapper.selectList(
                 new LambdaQueryWrapper<Reservation>()
                         .eq(Reservation::getReserveDate, date)
                         .ne(Reservation::getStatus, "CANCELLED")
         ).stream().map(Reservation::getTimeSlot).collect(Collectors.toList());
 
-        // 获取当天被老板锁定的时间段
         List<String> lockedSlots = lockedSlotMapper.selectList(
                 new LambdaQueryWrapper<LockedSlot>()
                         .eq(LockedSlot::getLockDate, date)
@@ -77,28 +100,57 @@ public class ReservationService {
         boolean isToday = date.equals(LocalDate.now());
 
         List<Map<String, Object>> result = new ArrayList<>();
-        List<String> allSlots = getAllSlots();
-        for (String slot : allSlots) {
-            boolean isAvailable = !bookedSlots.contains(slot) && !lockedSlots.contains(slot);
-            
-            // 如果是今天，且该时间段已经开始或过去，则置为不可用
+
+        int effectiveDuration = calculateEffectiveDuration(menuItemId, optionIds);
+        LocalTime closeTime = getCloseTime();
+
+        for (String startStr : AWAI_SLOTS) {
+            LocalTime start = LocalTime.parse(startStr);
+            LocalTime end = start.plusMinutes(effectiveDuration);
+
+            // 必须能在打烊前结束
+            if (end.isAfter(closeTime)) {
+                result.add(Map.of("timeSlot", startStr + "-" + end.toString(), "available", false));
+                continue;
+            }
+
+            String slotRange = startStr + "-" + end.toString();
+
+            // 检查是否被预约/锁定
+            boolean isBooked = bookedSlots.stream().anyMatch(s -> overlaps(s, slotRange));
+            boolean isLocked = lockedSlots.stream().anyMatch(s -> overlaps(s, slotRange));
+            boolean isAvailable = !isBooked && !isLocked;
+
+            // 今天的过去时间不可选
             if (isToday && isAvailable) {
-                LocalTime startTime = LocalTime.parse(slot.split("-")[0]);
-                if (now.isAfter(startTime)) {
+                if (now.isAfter(start)) {
                     isAvailable = false;
                 }
             }
 
-            result.add(Map.of("timeSlot", slot, "available", isAvailable));
+            result.add(Map.of("timeSlot", slotRange, "available", isAvailable));
         }
+
         return result;
+    }
+
+    /** 两个时间范围是否重叠（格式: "HH:mm-HH:mm"） */
+    private boolean overlaps(String rangeA, String rangeB) {
+        String[] partsA = rangeA.split("-");
+        String[] partsB = rangeB.split("-");
+        if (partsA.length != 2 || partsB.length != 2) return false;
+        LocalTime aStart = LocalTime.parse(partsA[0]);
+        LocalTime aEnd = LocalTime.parse(partsA[1]);
+        LocalTime bStart = LocalTime.parse(partsB[0]);
+        LocalTime bEnd = LocalTime.parse(partsB[1]);
+        return aStart.isBefore(bEnd) && bStart.isBefore(aEnd);
     }
 
     @Transactional
     public Long submitReservation(ReservationRequest req) {
         LocalDate reserveDate = req.getReserveDate();
         LocalDate today = LocalDate.now();
-        
+
         if (reserveDate.isBefore(today)) {
             throw new RuntimeException("不能预约过去的日期");
         }
@@ -123,7 +175,7 @@ public class ReservationService {
             throw new RuntimeException("您已有预约在进行中，如需预约新时间段请先取消当前预约。");
         }
 
-        // 新客防刷校验：如果选了新客但联系方式在历史记录（含已取消）中存在，判定为老客
+        // 新客防刷校验
         if ("NEW".equals(req.getCustomerType())) {
             boolean historyExists = reservationMapper.countByContactIdIncludeDeleted(req.getContactId()) > 0;
             if (historyExists) {
@@ -131,10 +183,20 @@ public class ReservationService {
             }
         }
 
-        // 应用层防撞单检查（排除已取消的记录）
-        boolean exists = reservationMapper.exists(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Reservation>()
+        // 计算实际时间段（根据菜单时长动态计算）
+        String timeSlot = req.getTimeSlot();
+        if (req.getMenuItemId() != null) {
+            int effectiveDuration = calculateEffectiveDuration(req.getMenuItemId(), req.getOptionIds());
+            String startStr = req.getTimeSlot().split("-")[0];
+            LocalTime start = LocalTime.parse(startStr);
+            LocalTime end = start.plusMinutes(effectiveDuration);
+            timeSlot = startStr + "-" + end.toString();
+        }
+
+        // 防撞单检查
+        boolean exists = reservationMapper.exists(new LambdaQueryWrapper<Reservation>()
                 .eq(Reservation::getReserveDate, reserveDate)
-                .eq(Reservation::getTimeSlot, req.getTimeSlot())
+                .eq(Reservation::getTimeSlot, timeSlot)
                 .ne(Reservation::getStatus, "CANCELLED"));
         if (exists) {
             throw new RuntimeException("手慢了，该时间段已被预订");
@@ -148,11 +210,18 @@ public class ReservationService {
         res.setRemarks(req.getRemarks());
         res.setReferenceImage(req.getReferenceImage());
         res.setReserveDate(req.getReserveDate());
-        res.setTimeSlot(req.getTimeSlot());
+        res.setTimeSlot(timeSlot);
         res.setStatus("PENDING_DEPOSIT");
         res.setCreatedAt(LocalDateTime.now());
+        res.setMenuItemId(req.getMenuItemId());
 
-        // ─── 服务总价 & 动态定金计算 ──────────────────────
+        // 子选项ID存为JSON
+        if (req.getOptionIds() != null && !req.getOptionIds().isEmpty()) {
+            res.setSelectedOptions(req.getOptionIds().stream()
+                    .map(String::valueOf).collect(Collectors.joining(",")));
+        }
+
+        // 服务总价 & 动态定金计算
         Integer totalAmount = req.getTotalAmount();
         if (totalAmount != null && totalAmount > 0) {
             res.setTotalAmount(totalAmount);
@@ -163,23 +232,15 @@ public class ReservationService {
             res.setDepositAmount(getDefaultDeposit());
         }
         res.setDepositStatus("NONE");
-        // ─────────────────────────────────────────────────
 
-        // 插入数据库防并发：依赖数据库 (reserve_date, time_slot) 的 UNIQUE 约束。
-        // 并发时只有一个能插入成功，其他的抛出 DuplicateKeyException，由全局异常捕获。
         reservationMapper.insert(res);
 
-        // 发送新预约 Telegram 通知
+        // 发送新预约通知
         notifyService.notifyNewReservation(res);
 
-        // 返回生成的预约 ID（供前端支付模块使用）
         return res.getId();
     }
 
-    /**
-     * 将所有预约时间已过的 PENDING_DEPOSIT/CONFIRMED 记录自动标记为 COMPLETED。
-     * 在查询接口入口处调用，避免引入 @Scheduled。
-     */
     @Transactional
     public void autoCompleteExpiredReservations() {
         List<Reservation> active = reservationMapper.selectList(
@@ -208,10 +269,6 @@ public class ReservationService {
         }
     }
 
-    /**
-     * 按联系方式查询预约记录（用户端 - 预约历史）
-     * 按预约日期倒序排列
-     */
     public List<Reservation> getReservationsByContactId(String contactId) {
         autoCompleteExpiredReservations();
         return reservationMapper.selectList(
@@ -222,20 +279,10 @@ public class ReservationService {
         );
     }
 
-    /**
-     * 查询该联系方式是否有历史预约记录（含已取消）
-     * 用于首页自动判断新客/老客
-     */
     public boolean hasReservationHistory(String contactId) {
         return reservationMapper.countByContactIdIncludeDeleted(contactId) > 0;
     }
 
-    /**
-     * 用户端取消预约
-     * - 改变 status 为 CANCELLED（保留记录，不是软删除）
-     * - 如果定金已付 → depositStatus = PENDING_REFUND
-     * - 通知店主（含退款提醒）
-     */
     @Transactional
     public void userCancelReservation(Long id, String reason) {
         Reservation r = reservationMapper.selectById(id);
@@ -283,10 +330,6 @@ public class ReservationService {
         );
     }
 
-    /**
-     * 查询所有已被取消的预约（软删除的记录）
-     * 通过在 Mapper 中自定义 SQL 绕过 @TableLogic 过滤
-     */
     public List<Reservation> getCancelledReservations() {
         return reservationMapper.selectCancelledList();
     }
@@ -301,14 +344,13 @@ public class ReservationService {
 
     @Transactional
     public void lockSlot(LocalDate date, String timeSlot) {
-        // 先检查是否已经有人预约或已经锁定，避免老板自己撞单（排除已取消/已完成的记录）
         boolean hasReservation = reservationMapper.exists(new LambdaQueryWrapper<Reservation>()
                 .eq(Reservation::getReserveDate, date)
                 .eq(Reservation::getTimeSlot, timeSlot)
                 .ne(Reservation::getStatus, "CANCELLED")
                 .ne(Reservation::getStatus, "COMPLETED"));
         if (hasReservation) throw new RuntimeException("该时间段已被客人预约，无法锁定");
-        
+
         boolean isLocked = lockedSlotMapper.exists(new LambdaQueryWrapper<LockedSlot>()
                 .eq(LockedSlot::getLockDate, date).eq(LockedSlot::getTimeSlot, timeSlot));
         if (isLocked) return;
@@ -329,8 +371,8 @@ public class ReservationService {
 
     @Transactional
     public void lockDay(LocalDate date) {
-        List<String> allSlots = getAllSlots();
-        for (String slot : allSlots) {
+        for (String startStr : AWAI_SLOTS) {
+            String slot = startStr + "-" + LocalTime.parse(startStr).plusMinutes(MIN_SLOT_DURATION).toString();
             boolean isLocked = lockedSlotMapper.exists(new LambdaQueryWrapper<LockedSlot>()
                     .eq(LockedSlot::getLockDate, date).eq(LockedSlot::getTimeSlot, slot));
             if (!isLocked) {
@@ -352,32 +394,17 @@ public class ReservationService {
 
     @Transactional
     public void deleteReservation(Long id) {
-        // 先查出预约详情（删了就没数据了）
         Reservation reservation = reservationMapper.selectById(id);
         if (reservation == null) {
             log.warn("取消预约失败：ID={} 不存在", id);
             return;
         }
-
-        // 执行逻辑删除（@TableLogic 自动转成 UPDATE is_deleted=1）
         reservationMapper.deleteById(id);
-
-        // 发送取消通知给店主
         notifyService.notifyCancelledReservation(reservation);
     }
 
-    /**
-     * 恢复已取消的预约（仅限有历史记录的老客）
-     *
-     * 📖 知识点：恢复已逻辑删除的记录的范式
-     * 1. 用自定义 SQL 绕过 @TableLogic 查到被删的记录
-     * 2. 校验客户身份（老客验证）
-     * 3. 用 UPDATE 直接设置 is_deleted=0
-     * 4. 发送通知
-     */
     @Transactional
     public void restoreReservation(Long id) {
-        // 1. 查到软删除的记录（普通 selectById 查不到，因为有 @TableLogic 过滤）
         Reservation reservation = reservationMapper.selectByIdIncludeDeleted(id);
         if (reservation == null) {
             throw new RuntimeException("未找到该预约记录");
@@ -386,20 +413,17 @@ public class ReservationService {
             throw new RuntimeException("该预约未被取消，无需恢复");
         }
 
-        // 2. 老客校验：检查该客户是否曾经预约过（包括已删除的记录）
         int historyCount = reservationMapper.countByContactIdIncludeDeleted(reservation.getContactId());
         if (historyCount == 0) {
             throw new RuntimeException("该客户无历史预约记录，无法恢复");
         }
 
-        // 3. 执行恢复
         int affected = reservationMapper.restoreById(id);
         if (affected != 1) {
             throw new RuntimeException("恢复预约失败");
         }
 
-        // 4. 发送恢复通知
-        reservation.setIsDeleted(0); // 更新内存中的状态，用于通知消息
+        reservation.setIsDeleted(0);
         notifyService.notifyRestoredReservation(reservation);
     }
 
@@ -421,7 +445,9 @@ public class ReservationService {
 
     public Map<String, Object> getWeekSummary() {
         LocalDate today = LocalDate.now();
-        List<String> allSlots = getAllSlots();
+        List<String> allSlots = AWAI_SLOTS.stream()
+                .map(s -> s + "-" + LocalTime.parse(s).plusMinutes(MIN_SLOT_DURATION).toString())
+                .collect(Collectors.toList());
         int totalSlots = allSlots.size();
 
         List<Map<String, Object>> days = new ArrayList<>();
@@ -465,9 +491,6 @@ public class ReservationService {
         return result;
     }
 
-    /**
-     * 客户自报已付款，等待店主确认
-     */
     @Transactional
     public void customerClaimPaid(Long reservationId) {
         Reservation r = reservationMapper.selectById(reservationId);
@@ -484,9 +507,6 @@ public class ReservationService {
         notifyService.notifyCustomerClaimedPaid(r);
     }
 
-    /**
-     * 标记定金已收款
-     */
     @Transactional
     public void markDepositPaid(Long reservationId) {
         Reservation r = reservationMapper.selectById(reservationId);
@@ -500,75 +520,28 @@ public class ReservationService {
         reservationMapper.updateById(r);
     }
 
-    /**
-     * 标记定金已退款
-     */
     @Transactional
     public void markDepositRefunded(Long reservationId) {
         Reservation r = reservationMapper.selectById(reservationId);
         if (r == null) throw new RuntimeException("预约不存在");
-        if (!"PAID".equals(r.getDepositStatus()) && !"PENDING_REFUND".equals(r.getDepositStatus())) {
-            throw new RuntimeException("定金状态不是已收款或待退款，无法退款");
+        if (!"FORFEITED".equals(r.getDepositStatus()) && !"PAID".equals(r.getDepositStatus())) {
+            throw new RuntimeException("仅可退款已收或已没收的定金");
         }
         r.setDepositStatus("REFUNDED");
+        r.setDepositPaidAt(LocalDateTime.now());
         reservationMapper.updateById(r);
+        notifyService.notifyDepositRefunded(r);
     }
 
-    /**
-     * 标记定金已没收（客户 no-show 不退定金）
-     */
     @Transactional
     public void forfeitDeposit(Long reservationId) {
         Reservation r = reservationMapper.selectById(reservationId);
         if (r == null) throw new RuntimeException("预约不存在");
-        if (!"PAID".equals(r.getDepositStatus()) && !"PENDING_REFUND".equals(r.getDepositStatus())) {
-            throw new RuntimeException("定金状态不是已收款或待退款，无法没收");
+        if (!"PAID".equals(r.getDepositStatus())) {
+            throw new RuntimeException("仅可没收已收款的定金");
         }
         r.setDepositStatus("FORFEITED");
         reservationMapper.updateById(r);
-    }
-
-    // ─── 模拟支付（客户预付定金） ────────────────────────
-    // 客户在预约成功页点击支付按钮后调用，将定金标记为已付款
-    // 记录支付方式（paypay / wechat / alipay / simulate）和支付时间
-    // 后续可替换为真实支付网关：收到回调后调用此方法或直接更新DB
-
-    /**
-     * 用户改期预约
-     * - 仅允许 CONFIRMED 状态的预约改期
-     * - 检查新时间段可用后更新，原时间段自动释放
-     */
-    @Transactional
-    public void rescheduleReservation(Long id, String newDate, String newTimeSlot) {
-        Reservation r = reservationMapper.selectById(id);
-        if (r == null) throw new RuntimeException("预约不存在");
-        if (!"CONFIRMED".equals(r.getStatus())) {
-            throw new RuntimeException("只有已确认的预约才能改期，请先完成定金支付");
-        }
-
-        LocalDate newReserveDate = LocalDate.parse(newDate);
-        LocalDate today = LocalDate.now();
-        if (newReserveDate.isBefore(today)) throw new RuntimeException("不能改期到过去的日期");
-        if (newReserveDate.isAfter(today.plusDays(14))) throw new RuntimeException("最多只能提前14天预约");
-
-        // 检查新时间段是否与自己的当前时间段相同（无需改动）
-        if (newReserveDate.equals(r.getReserveDate()) && newTimeSlot.equals(r.getTimeSlot())) {
-            return;
-        }
-
-        // 检查新时间段是否已被占用（排除自己和已取消的记录）
-        boolean taken = reservationMapper.exists(new LambdaQueryWrapper<Reservation>()
-                .eq(Reservation::getReserveDate, newReserveDate)
-                .eq(Reservation::getTimeSlot, newTimeSlot)
-                .ne(Reservation::getStatus, "CANCELLED")
-                .ne(Reservation::getId, id));
-        if (taken) throw new RuntimeException("该时间段已被占用，请选择其他时间");
-
-        r.setReserveDate(newReserveDate);
-        r.setTimeSlot(newTimeSlot);
-        reservationMapper.updateById(r);
-
-        notifyService.notifyRescheduledReservation(r);
     }
 
     @Transactional
@@ -576,13 +549,71 @@ public class ReservationService {
         Reservation r = reservationMapper.selectById(reservationId);
         if (r == null) throw new RuntimeException("预约不存在");
         if (!"NONE".equals(r.getDepositStatus())) {
-            throw new RuntimeException("定金已支付或已处理，无需重复操作");
+            throw new RuntimeException("定金已支付，请勿重复操作");
         }
         r.setDepositStatus("PAID");
         r.setDepositPaidAt(LocalDateTime.now());
         r.setStatus("CONFIRMED");
         reservationMapper.updateById(r);
-        log.info("💳 模拟支付成功 — 预约ID: {}, 支付方式: {}, 金额: ¥{}",
-                reservationId, method, r.getDepositAmount());
+    }
+
+    @Transactional
+    public void rescheduleReservation(Long id, String dateStr, String timeSlot) {
+        Reservation r = reservationMapper.selectById(id);
+        if (r == null) throw new RuntimeException("预约不存在");
+        LocalDate newDate = LocalDate.parse(dateStr);
+        LocalDate today = LocalDate.now();
+        if (newDate.isBefore(today)) throw new RuntimeException("不能改期到过去的日期");
+
+        // 检查新时间段是否被占用
+        boolean exists = reservationMapper.exists(new LambdaQueryWrapper<Reservation>()
+                .eq(Reservation::getReserveDate, newDate)
+                .eq(Reservation::getTimeSlot, timeSlot)
+                .ne(Reservation::getStatus, "CANCELLED")
+                .ne(Reservation::getId, id));
+        if (exists) throw new RuntimeException("该时间段已被预订");
+
+        // 根据菜单重新计算时间段
+        String finalTimeSlot = timeSlot;
+        if (r.getMenuItemId() != null) {
+            List<Long> optionIds = null;
+            if (r.getSelectedOptions() != null && !r.getSelectedOptions().isBlank()) {
+                optionIds = Arrays.stream(r.getSelectedOptions().split(","))
+                        .map(String::trim).filter(s -> !s.isEmpty()).map(Long::parseLong)
+                        .collect(Collectors.toList());
+            }
+            int effectiveDuration = calculateEffectiveDuration(r.getMenuItemId(), optionIds);
+            String startStr = timeSlot.split("-")[0];
+            LocalTime start = LocalTime.parse(startStr);
+            LocalTime end = start.plusMinutes(effectiveDuration);
+            finalTimeSlot = startStr + "-" + end.toString();
+        }
+
+        r.setReserveDate(newDate);
+        r.setTimeSlot(finalTimeSlot);
+        r.setStatus("PENDING_DEPOSIT");
+        reservationMapper.updateById(r);
+        notifyService.notifyRescheduledReservation(r);
+    }
+
+    // ─── 计算总价 ──────────────────────────
+
+    public int calculateTotalAmount(Long menuItemId, List<Long> optionIds, boolean isNewCustomer) {
+        int total = 0;
+        if (menuItemId != null) {
+            MenuItem item = menuItemMapper.selectById(menuItemId);
+            if (item != null && item.getPrice() != null) {
+                total += item.getPrice();
+            }
+        }
+        if (optionIds != null && !optionIds.isEmpty()) {
+            total += menuItemOptionMapper.selectList(
+                    new LambdaQueryWrapper<MenuItemOption>().in(MenuItemOption::getId, optionIds)
+            ).stream().filter(o -> o.getPrice() != null).mapToInt(MenuItemOption::getPrice).sum();
+        }
+        if (isNewCustomer) {
+            total = (int) Math.round(total * 0.8);
+        }
+        return total;
     }
 }

@@ -9,8 +9,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -21,8 +24,35 @@ public class ReservationController {
 
     @GetMapping("/availability")
     public ApiResponse<List<Map<String, Object>>> getAvailability(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ApiResponse.success(reservationService.getAvailability(date));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long menuItemId,
+            @RequestParam(required = false) String optionIds) {
+        List<Long> ids = null;
+        if (optionIds != null && !optionIds.isBlank()) {
+            ids = Arrays.stream(optionIds.split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty()).map(Long::parseLong)
+                    .collect(Collectors.toList());
+        }
+        return ApiResponse.success(reservationService.getAvailability(date, menuItemId, ids));
+    }
+
+    @GetMapping("/availability/estimate")
+    public ApiResponse<Map<String, Object>> estimateAvailability(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long menuItemId,
+            @RequestParam(required = false) String optionIds) {
+        List<Long> ids = null;
+        if (optionIds != null && !optionIds.isBlank()) {
+            ids = Arrays.stream(optionIds.split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty()).map(Long::parseLong)
+                    .collect(Collectors.toList());
+        }
+        int duration = reservationService.calculateEffectiveDuration(menuItemId, ids);
+        int totalPrice = reservationService.calculateTotalAmount(menuItemId, ids, false);
+        return ApiResponse.success(Map.of(
+                "totalDuration", duration,
+                "totalPrice", totalPrice
+        ));
     }
 
     @PostMapping("/reserve")

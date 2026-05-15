@@ -89,6 +89,9 @@ const goBack = () => router.back();
 // 已选服务
 const selectedService = JSON.parse(sessionStorage.getItem('selectedService') || 'null');
 
+// 已选子选项
+const selectedOptionIds = JSON.parse(sessionStorage.getItem('selectedOptionIds') || '[]');
+
 const thumbFile = (svc) => {
   const map = {
     '换款卸甲·本甲': 'work4.jpg', '他店来·本甲': 'work8.jpg', '他店来·甲片': 'work11.jpg',
@@ -152,7 +155,7 @@ const selectDate = async (d) => {
 
   loading.value = true;
   try {
-    const res = await getAvailability(d.iso);
+    const res = await getAvailability(d.iso, selectedService?.id, selectedOptionIds);
     if (res.code === 200) slots.value = res.data;
   } catch (e) {
     console.error('获取时间失败', e);

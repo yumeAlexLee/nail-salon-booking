@@ -2,7 +2,9 @@ package com.nailsalon.booking.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.nailsalon.booking.entity.MenuItem;
+import com.nailsalon.booking.entity.MenuItemOption;
 import com.nailsalon.booking.mapper.MenuItemMapper;
+import com.nailsalon.booking.mapper.MenuItemOptionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 public class MenuService {
 
     private final MenuItemMapper menuItemMapper;
+    private final MenuItemOptionMapper menuItemOptionMapper;
 
     /**
      * 获取所有启用的菜单项目，按分类分组，分类内按 sort_order 排序
@@ -55,6 +58,53 @@ public class MenuService {
     @Transactional
     public void createItem(MenuItem item) {
         menuItemMapper.insert(item);
+    }
+
+    // ─────────────── 子选项管理 ───────────────
+
+    /** 获取某个菜单项目的所有启用子选项 */
+    public List<MenuItemOption> getActiveOptions(Long menuItemId) {
+        return menuItemOptionMapper.selectList(
+                new LambdaQueryWrapper<MenuItemOption>()
+                        .eq(MenuItemOption::getMenuItemId, menuItemId)
+                        .eq(MenuItemOption::getIsActive, 1)
+                        .orderByAsc(MenuItemOption::getSortOrder)
+        );
+    }
+
+    /** 获取某个菜单项目的所有子选项（含隐藏）- 后台用 */
+    public List<MenuItemOption> getAllOptions(Long menuItemId) {
+        return menuItemOptionMapper.selectList(
+                new LambdaQueryWrapper<MenuItemOption>()
+                        .eq(MenuItemOption::getMenuItemId, menuItemId)
+                        .orderByAsc(MenuItemOption::getSortOrder)
+        );
+    }
+
+    /** 新增子选项 */
+    @Transactional
+    public void createOption(MenuItemOption option) {
+        menuItemOptionMapper.insert(option);
+    }
+
+    /** 更新子选项 */
+    @Transactional
+    public void updateOption(MenuItemOption option) {
+        menuItemOptionMapper.updateById(option);
+    }
+
+    /** 删除子选项 */
+    @Transactional
+    public void deleteOption(Long id) {
+        menuItemOptionMapper.deleteById(id);
+    }
+
+    /** 批量获取子选项（用于计算总价/总时长） */
+    public List<MenuItemOption> getOptionsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return menuItemOptionMapper.selectList(
+                new LambdaQueryWrapper<MenuItemOption>().in(MenuItemOption::getId, ids)
+        );
     }
 
     /** 更新菜单项目 */

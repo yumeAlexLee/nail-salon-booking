@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ReservationRequest {
@@ -22,4 +23,7 @@ public class ReservationRequest {
     private LocalDate reserveDate;
     @NotBlank(message = "预约时间段不能为空")
     private String timeSlot;
+    private Long menuItemId;
+    private List<Long> optionIds;
+    private Integer totalDuration;
 }

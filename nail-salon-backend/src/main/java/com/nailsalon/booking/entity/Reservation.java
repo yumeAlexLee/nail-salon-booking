@@ -37,4 +37,10 @@ public class Reservation {
 
     @TableField("cancel_reason")
     private String cancelReason;
+
+    @TableField("menu_item_id")
+    private Long menuItemId;
+
+    @TableField("selected_options")
+    private String selectedOptions;
 }

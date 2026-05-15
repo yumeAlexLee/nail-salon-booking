@@ -160,6 +160,13 @@
                   <span class="item-price">¥{{ item.price.toLocaleString() }}</span>
                   <span v-if="item.duration" class="item-duration"> · {{ item.duration }}分</span>
                 </div>
+                <van-button
+                  size="mini" plain type="primary"
+                  style="margin-top:6px;"
+                  @click.stop="showOptionsEditor(item)"
+                >
+                  选项管理
+                </van-button>
               </template>
               <template #value>
                 <van-switch v-model="item.isActive" size="20" @click.stop @change="(v) => toggleActive(item, v)"
@@ -192,6 +199,57 @@
             </div>
             <div style="margin: 16px;">
               <van-button round block type="primary" @click="saveMenuItem">保存</van-button>
+            </div>
+          </van-form>
+        </div>
+      </van-popup>
+
+      <!-- 子选项编辑弹窗 -->
+      <van-popup v-model:show="showOptionPopup" position="right"
+        :style="{ width: '90%', height: '100%' }"
+        :overlay-style="{ backgroundColor: 'rgba(0,0,0,0.4)' }"
+        @closed="optionEditingItem = null"
+      >
+        <div class="menu-editor" style="overflow-y:auto;height:100%;">
+          <h3 class="popup-title">
+            {{ optionEditingItem?.name || '子选项管理' }}
+            <span v-if="optionEditingItem" style="font-size:13px;color:#999;"> 的附加选项</span>
+          </h3>
+
+          <!-- 现有选项列表 -->
+          <div v-if="optionsList.length > 0" style="margin-bottom:16px;padding:0 16px;">
+            <div v-for="opt in optionsList" :key="opt.id"
+              style="display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;">
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:14px;">{{ opt.name }}</div>
+                <div style="font-size:12px;color:#999;">
+                  <span v-if="opt.nameJa">{{ opt.nameJa }} · </span>
+                  +¥{{ opt.price.toLocaleString() }}
+                  <span v-if="opt.duration"> · +{{ opt.duration }}分</span>
+                </div>
+              </div>
+              <van-button size="mini" plain @click.stop="editOption(opt)" style="margin-right:6px;">编辑</van-button>
+              <van-button size="mini" plain type="danger" @click.stop="handleDeleteOption(opt)">删除</van-button>
+            </div>
+          </div>
+          <div v-else style="text-align:center;color:#969799;padding:20px 0;font-size:14px;">暂无选项</div>
+
+          <!-- 添加/编辑表单 -->
+          <van-form @submit="saveOption">
+            <van-cell-group inset>
+              <van-field label="名称(中)" v-model="optionForm.name" placeholder="如: 贴钻" :rules="[{required:true}]" />
+              <van-field label="名称(日)" v-model="optionForm.nameJa" placeholder="如: ストーン" />
+              <van-field label="追加价格" v-model="optionForm.price" type="digit" placeholder="日元" :rules="[{required:true}]" />
+              <van-field label="追加时长(分)" v-model="optionForm.duration" type="digit" placeholder="如: 15" />
+              <van-field label="排序" v-model="optionForm.sortOrder" type="digit" placeholder="数字越小越靠前" />
+            </van-cell-group>
+            <div style="margin:16px;">
+              <van-button round block type="primary" @click="saveOption">
+                {{ optionForm.id ? '保存修改' : '添加选项' }}
+              </van-button>
+              <van-button v-if="optionForm.id" round plain block style="margin-top:8px;" @click="cancelOptionEdit">
+                取消编辑
+              </van-button>
             </div>
           </van-form>
         </div>
@@ -295,7 +353,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { showToast, showConfirmDialog } from 'vant';
-import { getAdminReservations, getAdminLockedSlots, lockSlot, unlockSlot, deleteReservation, getSettings, updateSettings, lockDay, unlockDay, getCancelledReservations, restoreReservation, getAllMenuItems, createMenuItem, updateMenuItem, deleteMenuItem, markDepositPaid, markDepositRefunded, forfeitDeposit } from '../api';
+import { getAdminReservations, getAdminLockedSlots, lockSlot, unlockSlot, deleteReservation, getSettings, updateSettings, lockDay, unlockDay, getCancelledReservations, restoreReservation, getAllMenuItems, createMenuItem, updateMenuItem, deleteMenuItem, markDepositPaid, markDepositRefunded, forfeitDeposit, getAdminMenuOptions, createMenuOption, updateMenuOption, deleteMenuOption } from '../api';
 
 // 认证与基础状态
 const password = ref('');
@@ -313,6 +371,12 @@ const cancelledReservations = ref([]);
 const allMenuItems = ref([]);
 const showMenuPopup = ref(false);
 const editingItem = ref(null);
+
+// ─── 子选项管理 ───
+const showOptionPopup = ref(false);
+const optionEditingItem = ref(null);
+const optionsList = ref([]);
+const optionForm = ref({ name: '', nameJa: '', price: '', duration: '', sortOrder: '' });
 const menuForm = ref({
   category: '', categoryJa: '', name: '', nameJa: '',
   price: '', duration: '', sortOrder: '', description: '', descriptionJa: ''
@@ -676,6 +740,81 @@ const handleDeleteMenu = (id, name) => {
       showMenuPopup.value = false;
       editingItem.value = null;
       await fetchAllData();
+    } catch (e) {
+      showToast('删除失败');
+    }
+  }).catch(() => {});
+};
+
+// ─── 子选项管理方法 ───────────────────────────────
+
+const showOptionsEditor = async (item) => {
+  optionEditingItem.value = item;
+  optionsList.value = [];
+  optionForm.value = { name: '', nameJa: '', price: '', duration: '', sortOrder: '' };
+  showOptionPopup.value = true;
+  try {
+    const res = await getAdminMenuOptions(item.id);
+    if (res.code === 200) optionsList.value = res.data || [];
+  } catch (e) {
+    console.error('获取子选项失败', e);
+  }
+};
+
+const editOption = (opt) => {
+  optionForm.value = {
+    id: opt.id,
+    menuItemId: optionEditingItem.value.id,
+    name: opt.name || '',
+    nameJa: opt.nameJa || '',
+    price: String(opt.price || ''),
+    duration: String(opt.duration || ''),
+    sortOrder: String(opt.sortOrder || ''),
+  };
+};
+
+const cancelOptionEdit = () => {
+  optionForm.value = { name: '', nameJa: '', price: '', duration: '', sortOrder: '' };
+};
+
+const saveOption = async () => {
+  if (!optionForm.value.name || !optionForm.value.price) return;
+  const data = {
+    menuItemId: optionEditingItem.value.id,
+    name: optionForm.value.name,
+    nameJa: optionForm.value.nameJa || null,
+    price: parseInt(optionForm.value.price),
+    duration: optionForm.value.duration ? parseInt(optionForm.value.duration) : 0,
+    sortOrder: optionForm.value.sortOrder ? parseInt(optionForm.value.sortOrder) : 0,
+    isActive: 1,
+  };
+  try {
+    if (optionForm.value.id) {
+      await updateMenuOption(optionForm.value.id, data);
+      showToast('更新成功');
+    } else {
+      await createMenuOption(data);
+      showToast('添加成功');
+    }
+    const res = await getAdminMenuOptions(optionEditingItem.value.id);
+    if (res.code === 200) optionsList.value = res.data || [];
+    optionForm.value = { name: '', nameJa: '', price: '', duration: '', sortOrder: '' };
+  } catch (e) {
+    showToast('操作失败');
+  }
+};
+
+const handleDeleteOption = (opt) => {
+  showConfirmDialog({
+    title: '删除选项',
+    message: `确定要删除【${opt.name}】吗？`,
+    confirmButtonColor: 'var(--accent-red)'
+  }).then(async () => {
+    try {
+      await deleteMenuOption(opt.id);
+      showToast('已删除');
+      const res = await getAdminMenuOptions(optionEditingItem.value.id);
+      if (res.code === 200) optionsList.value = res.data || [];
     } catch (e) {
       showToast('删除失败');
     }

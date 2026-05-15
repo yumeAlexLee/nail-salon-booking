@@ -14,8 +14,11 @@ const adminApi = axios.create({
 });
 
 // 获取可用时间
-export const getAvailability = (date) => {
-  return api.get('/availability', { params: { date } }).then(res => res.data);
+export const getAvailability = (date, menuItemId, optionIds) => {
+  const params = { date };
+  if (menuItemId) params.menuItemId = menuItemId;
+  if (optionIds && optionIds.length > 0) params.optionIds = optionIds.join(',');
+  return api.get('/availability', { params }).then(res => res.data);
 };
 
 // 提交预约
@@ -173,4 +176,25 @@ export const updateMenuItem = (id, data) => {
 // 删除菜单项目
 export const deleteMenuItem = (id) => {
   return adminApi.delete(`/menu/admin/${id}`).then(res => res.data);
+};
+
+// ─── 子选项（客人端） ───────────────────────────
+
+// 获取某个菜单项目的子选项（客人可见）
+export const getMenuOptions = (menuItemId) => {
+  return api.get(`/menu/${menuItemId}/options`).then(res => res.data);
+};
+
+// ─── 子选项管理（后台） ────────────────────────────
+export const getAdminMenuOptions = (menuItemId) => {
+  return adminApi.get('/menu/admin/options/list', { params: { menuItemId } }).then(res => res.data);
+};
+export const createMenuOption = (data) => {
+  return adminApi.post('/menu/admin/options', data).then(res => res.data);
+};
+export const updateMenuOption = (id, data) => {
+  return adminApi.put(`/menu/admin/options/${id}`, data).then(res => res.data);
+};
+export const deleteMenuOption = (id) => {
+  return adminApi.delete(`/menu/admin/options/${id}`).then(res => res.data);
 };

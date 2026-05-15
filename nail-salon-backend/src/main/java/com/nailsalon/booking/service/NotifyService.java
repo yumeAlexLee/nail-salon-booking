@@ -135,6 +135,26 @@ public class NotifyService {
     }
 
     /**
+     * 发送退款通知
+     */
+    public void notifyDepositRefunded(Reservation reservation) {
+        String dateStr = reservation.getReserveDate() != null
+                ? reservation.getReserveDate().format(DateTimeFormatter.ofPattern("MM月dd日"))
+                : "未知";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("↩️ <b>定金已退款</b>\n");
+        sb.append("━━━━━━━━━━━━━━\n");
+        sb.append("👤 <b>").append(escapeHtml(reservation.getName())).append("</b>\n");
+        sb.append("📅 ").append(dateStr).append(" ").append(reservation.getTimeSlot()).append("\n");
+        sb.append("💰 已退款: ¥").append(reservation.getDepositAmount()).append("\n");
+
+        sendTelegramMessage(sb.toString(),
+                "✅ 退款通知发送成功: {}",
+                "❌ 退款通知发送失败: {}");
+    }
+
+    /**
      * 发送客户声称已付款通知
      * 店主收到后需检查微信/支付宝，确认收款后手动标记定金为已收款
      */
